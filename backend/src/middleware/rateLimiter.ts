@@ -102,7 +102,7 @@ export const ejerciciosRateLimiter = rateLimit({
   max: 20, // 20 envíos por ventana
   keyGenerator: (req: Request) => {
     // Usar ID de usuario si está autenticado, sino usar IP
-    return req.userId?.toString() || req.ip || 'unknown';
+    return (req as any).userId?.toString() || req.ip || 'unknown';
   },
   message: {
     error: 'Demasiados envíos de ejercicios',
@@ -129,7 +129,7 @@ export const quizRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutos
   max: 30, // 30 respuestas por ventana
   keyGenerator: (req: Request) => {
-    return req.userId?.toString() || req.ip || 'unknown';
+    return (req as any).userId?.toString() || req.ip || 'unknown';
   },
   message: {
     error: 'Demasiadas respuestas de quiz',
@@ -151,7 +151,7 @@ export const createCustomRateLimiter = (options: {
     windowMs: options.windowMs,
     max: options.max,
     keyGenerator: options.useUserId
-      ? (req: Request) => req.userId?.toString() || req.ip || 'unknown'
+      ? (req: Request) => (req as any).userId?.toString() || req.ip || 'unknown'
       : undefined,
     message: {
       error: 'RateLimitExceeded',

@@ -177,8 +177,8 @@ const logError = (err: Error, req: Request): void => {
   const errorMeta = {
     method: req.method,
     path: req.originalUrl,
-    userId: req.userId,
-    userEmail: req.user?.email,
+    userId: (req as any).userId,
+    userEmail: (req as any).user?.email,
     ip: req.ip,
     userAgent: req.get('user-agent'),
   };

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../config/database';
-import { Usuario, RolUsuario } from '../models';
+import { Usuario, RolUsuario, EstadoUsuario } from '../models';
 import { 
   logUserRegistration, 
   logLoginSuccess, 
@@ -89,11 +89,11 @@ export class AuthService {
         apellido: data.apellido || '',
         rol: data.rol || RolUsuario.ESTUDIANTE,
         matricula: data.matricula,
-        estado: 'activo'
+        estado: EstadoUsuario.ACTIVO
       });
 
       // 5. Guardar en la base de datos
-      const usuarioGuardado = await this.usuarioRepository.save(nuevoUsuario);
+      const usuarioGuardado = await this.usuarioRepository.save(nuevoUsuario) as unknown as Usuario;
 
       // 6. Loguear el registro
       logUserRegistration(usuarioGuardado.id, usuarioGuardado.email, usuarioGuardado.rol);
@@ -236,13 +236,11 @@ export class AuthService {
       throw error;
     }
   }
-
   /**
    * Generar Access Token (JWT de corta duración)
    */
   private generarAccessToken(usuario: Usuario): string {
     const JWT_SECRET = process.env.JWT_SECRET;
-    const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
     if (!JWT_SECRET) {
       throw new Error('JWT_SECRET no está configurado');
@@ -254,9 +252,9 @@ export class AuthService {
       rol: usuario.rol
     };
 
-    return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRATION
-    });
+    return jwt.sign(payload, JWT_SECRET, { 
+      expiresIn: process.env.JWT_EXPIRATION || '1h' 
+    } as any);
   }
 
   /**
@@ -264,10 +262,9 @@ export class AuthService {
    */
   private generarRefreshToken(usuario: Usuario): string {
     const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-    const JWT_REFRESH_EXPIRATION = process.env.JWT_REFRESH_EXPIRATION || '7d';
 
     if (!JWT_REFRESH_SECRET) {
-      throw new Error('JWT_REFRESH_SECRET no está configurado');
+      throw new Error('JWT_REFRESH_SECRET no esta configurado');
     }
 
     const payload = {
@@ -275,9 +272,9 @@ export class AuthService {
       email: usuario.email
     };
 
-    return jwt.sign(payload, JWT_REFRESH_SECRET, {
-      expiresIn: JWT_REFRESH_EXPIRATION
-    });
+    return jwt.sign(payload, JWT_REFRESH_SECRET, { 
+      expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d' 
+    } as any);
   }
 }
 

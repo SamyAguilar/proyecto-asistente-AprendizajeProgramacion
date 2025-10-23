@@ -1,40 +1,29 @@
 {
   "compilerOptions": {
-    /* --- Configuración del Entorno y Módulos --- */
-    "target": "ES2020", // Especifica a qué versión de JavaScript se compilará tu código (ES2020 es moderno y compatible con Node.js 18).
-    "module": "commonjs", // El sistema de módulos que usará el JS compilado. 'commonjs' es el estándar de Node.js (usando require/module.exports).
-    "lib": ["ES2020"], // Define las bibliotecas de tipos que TypeScript "conoce". 'ES2020' incluye características modernas de JS.
-    "moduleResolution": "node", // Le dice a TS que resuelva los módulos al estilo de Node.js (buscando en node_modules).
-    "esModuleInterop": true, // Permite importar módulos 'commonjs' como si fueran módulos ES (import default from 'express'). Muy recomendado.
-
-    /* --- Ubicación de Archivos (Entrada y Salida) --- */
-    "outDir": "./dist", // La carpeta donde se guardará todo el código JavaScript compilado.
-    "rootDir": "./src", // La carpeta raíz donde vive todo tu código fuente de TypeScript (.ts).
-
-    /* --- Reglas Estrictas de Tipo (Calidad de Código) --- */
-    "strict": true, // Habilita *todas* las comprobaciones estrictas de tipo (null checks, etc.). Es la mejor práctica.
-    "strictPropertyInitialization": false, // ¡IMPORTANTE para TypeORM! Desactiva el error que te obliga a inicializar propiedades de clase en el constructor. Esto permite que TypeORM maneje las propiedades de la entidad (ej. @Column()).
-    "forceConsistentCasingInFileNames": true, // Obliga a que los nombres de archivo sean consistentes en mayúsculas/minúsculas (ej. no puedes hacer `import from './user'` si el archivo se llama `User.ts`).
-    "skipLibCheck": true, // Evita que TypeScript revise los tipos de todas tus dependencias (node_modules). Acelera la compilación.
-
-    /* --- Características Adicionales --- */
-    "resolveJsonModule": true, // Permite importar archivos .json directamente en tu código TypeScript.
-
-    /* --- Decoradores (¡OBLIGATORIO para TypeORM!) --- */
-    "experimentalDecorators": true, // Habilita el uso de decoradores (ej. @Entity(), @Column()).
-    "emitDecoratorMetadata": true, // Emite metadatos sobre los tipos, que TypeORM necesita para saber qué tipo de dato es una columna (ej. string, number).
-
-    /* --- Salida de Depuración (Debugging) --- */
-    "sourceMap": true, // Crea archivos .map que permiten depurar tu código TypeScript original en lugar del JavaScript compilado.
-    "declaration": true, // Genera archivos .d.ts (archivos de definición de tipos). Útil si creas una librería, opcional para una API.
-    "declarationMap": true // Genera source maps para los archivos .d.ts.
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-  /* --- Archivos a Incluir / Excluir --- */
   "include": [
-    "src/**/*" // Le dice a TypeScript que compile *todo* lo que esté dentro de la carpeta 'src'.
+    "src/**/*"
   ],
   "exclude": [
-    "node_modules", // Ignora la carpeta de dependencias.
-    "dist" // Ignora la carpeta de salida para evitar bucles de compilación.
+    "node_modules",
+    "dist"
   ]
 }

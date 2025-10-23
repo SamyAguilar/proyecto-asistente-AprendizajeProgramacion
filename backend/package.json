@@ -4,7 +4,7 @@
   "description": "Backend para Asistente de Aprendizaje de Programación",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon --exec ts-node src/app.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
