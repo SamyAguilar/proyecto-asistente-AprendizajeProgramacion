@@ -168,27 +168,22 @@ export const errorHandler = (
 };
 
 /**
- * Función para loguear errores
+ * Función para loguear errores usando Winston
  */
 const logError = (err: Error, req: Request): void => {
-  const errorLog = {
-    timestamp: new Date().toISOString(),
+  // Importar logger dinámicamente para evitar dependencias circulares
+  const { logError: winstonLogError } = require('../utils/logger');
+  
+  const errorMeta = {
     method: req.method,
     path: req.originalUrl,
-    error: err.name,
-    message: err.message,
-    stack: err.stack,
     userId: req.userId,
-    userEmail: req.user?.email
+    userEmail: req.user?.email,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
   };
 
-  // En desarrollo, imprimir en consola con colores
-  if (process.env.NODE_ENV === 'development') {
-    console.error('\n❌ ERROR:', errorLog);
-  } else {
-    // En producción, usar un logger apropiado (Winston, etc.)
-    console.error(JSON.stringify(errorLog));
-  }
+  winstonLogError('Error en request HTTP', err, errorMeta);
 };
 
 /**
