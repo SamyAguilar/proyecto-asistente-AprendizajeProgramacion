@@ -43,7 +43,7 @@ export class IntentoEjercicio {
 
   @Column({ type: 'int', nullable: true, name: 'puntos_obtenidos' })
   @IsOptional()
-  @IsInt({ message: 'Los puntos obtenidos deben ser un número entero' })
+  @IsInt({ message: 'Los puntos obtenidos deben ser un numero entero' })
   @Min(0, { message: 'Los puntos obtenidos deben ser mayor o igual a 0' })
   @Max(100, { message: 'Los puntos obtenidos deben ser menor o igual a 100' })
   puntosObtenidos: number;
