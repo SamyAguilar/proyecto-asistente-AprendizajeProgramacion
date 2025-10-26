@@ -11,6 +11,7 @@ import { logAppStart, logAppShutdown } from './utils/logger';
 // Importar rutas
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
+import { createGeminiRoutes } from './routes/gemini.routes';
 const app = express();
 const PORT = process.env.PORT || 3000;
 // ============================================
@@ -45,13 +46,14 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 // Rutas de usuarios (requieren autenticacion)
 app.use('/api/v1/usuarios', userRoutes);
+// Rutas de Gemini AI (validación de código con IA)
+app.use('/api/v1/gemini', createGeminiRoutes());
 // TODO: Agregar mas rutas aqui cuando se implementen
 // app.use('/api/v1/materias', materiasRoutes);
 // app.use('/api/v1/temas', temasRoutes);
 // app.use('/api/v1/ejercicios', ejerciciosRoutes);
 // app.use('/api/v1/quiz', quizRoutes);
 // app.use('/api/v1/reportes', reportesRoutes);
-// app.use('/api/v1/gemini', geminiRoutes);
 // ============================================
 // MANEJO DE ERRORES
 // ============================================
@@ -80,6 +82,12 @@ async function iniciarServidor() {
       console.log('   GET    /api/v1/usuarios/perfil        (requiere auth)');
       console.log('   PUT    /api/v1/usuarios/perfil        (requiere auth)');
       console.log('   GET    /api/v1/usuarios/progreso      (requiere auth)');
+      console.log('\n 🤖 Endpoints de IA (Gemini):');
+      console.log('   POST   /api/v1/gemini/validate-code      (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/generate-questions (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/chat               (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/explicar-concepto  (auth + 15 RPM)');
+      console.log('   GET    /api/v1/gemini/stats              (monitoreo)');
       console.log('\n Servidor listo para recibir peticiones\n');
            logAppStart(Number(PORT), process.env.NODE_ENV || 'development');
     });
