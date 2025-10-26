@@ -11,6 +11,7 @@ import { logAppStart, logAppShutdown } from './utils/logger';
 // Importar rutas
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
+import evaluacionRoutes from './routes/evaluacion.routes';
 const app = express();
 const PORT = process.env.PORT || 3000;
 // ============================================
@@ -50,6 +51,7 @@ app.use('/api/v1/usuarios', userRoutes);
 // app.use('/api/v1/temas', temasRoutes);
 // app.use('/api/v1/ejercicios', ejerciciosRoutes);
 // app.use('/api/v1/quiz', quizRoutes);
+app.use('/api/v1', evaluacionRoutes);
 // app.use('/api/v1/reportes', reportesRoutes);
 // app.use('/api/v1/gemini', geminiRoutes);
 // ============================================
