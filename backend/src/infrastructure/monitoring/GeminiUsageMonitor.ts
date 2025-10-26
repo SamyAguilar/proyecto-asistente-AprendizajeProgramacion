@@ -1,3 +1,6 @@
+import { AppDataSource } from '../../config/database';
+import { GeminiUsageLog } from '../../models/GeminiUsageLog';
+
 interface UsageRecord {
   timestamp: Date;
   tipo: string;
@@ -29,21 +32,37 @@ export class GeminiUsageMonitor {
   /**
    * Registrar una llamada a Gemini
    */
-  registrarLlamada(params: {
+  async registrarLlamada(params: {
     tipo: string;
     tokensEstimados: number;
     fueCache: boolean;
     tiempoRespuesta: number;
     userId?: number;
-  }): void {
+  }): Promise<void> {
     const record: UsageRecord = {
       timestamp: new Date(),
       ...params
     };
 
+    // Guardar en memoria
     this.records.push(record);
     this.limpiarRecordsAntiguos();
     this.verificarAlertas();
+
+    // Guardar en base de datos
+    try {
+      const logRepo = AppDataSource.getRepository(GeminiUsageLog);
+      await logRepo.save({
+        usuarioId: params.userId,
+        tipoRequest: params.tipo,
+        tokensEstimados: params.tokensEstimados,
+        fueCache: params.fueCache,
+        tiempoRespuestaMs: params.tiempoRespuesta,
+        modeloUsado: process.env.GEMINI_MODEL || 'gemini-1.5-flash-002'
+      });
+    } catch (error) {
+      console.warn('⚠️ [Monitor] Error al guardar en BD:', error);
+    }
 
     console.log(`📊 [Monitor] Registrado: ${params.tipo} (${params.fueCache ? 'CACHE' : 'API'}) - ${params.tiempoRespuesta}ms`);
   }

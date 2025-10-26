@@ -78,6 +78,19 @@ export function createGeminiRoutes(): Router {
   );
 
   /**
+   * POST /api/v1/gemini/generar-explicacion
+   * Generar explicación línea por línea de código
+   * 🔒 Requiere autenticación
+   * 🚦 Rate limited: 15 RPM
+   */
+  router.post(
+    '/generar-explicacion',
+    authMiddleware,
+    geminiRateLimiter.middleware,
+    geminiController.generarExplicacion
+  );
+
+  /**
    * GET /api/v1/gemini/stats
    * Estadísticas de uso de Gemini (monitoreo)
    * 📊 Ruta pública (considerar restringir a admin en producción)
