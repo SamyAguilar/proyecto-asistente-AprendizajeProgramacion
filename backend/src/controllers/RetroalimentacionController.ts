@@ -96,7 +96,10 @@ export class RetroalimentacionController {
       const { contexto, tipo = 'general' } = req.body;
       const usuario_id = req.user?.id;
 
-      console.log(`[Controller] Generando retroalimentación tipo: ${tipo}`);
+      console.log(`[RetroController] ========= INICIO TEST 13 =========`);
+      console.log(`[RetroController] Usuario ID: ${usuario_id}`);
+      console.log(`[RetroController] Tipo: ${tipo}`);
+      console.log(`[RetroController] Contexto:`, JSON.stringify(contexto, null, 2));
 
       if (!contexto) {
         return res.status(400).json({
@@ -106,13 +109,41 @@ export class RetroalimentacionController {
 
       // Construir prompt según el tipo de contexto
       const prompt = this.buildPromptRetroalimentacion(contexto, tipo);
+      
+      console.log(`[RetroController] ==================== PROMPT ====================`);
+      console.log(prompt);
+      console.log(`[RetroController] ==================== FIN PROMPT ====================`);
+      console.log(`[RetroController] Longitud del prompt: ${prompt.length} caracteres`);
 
       // Llamar a Gemini
+      console.log(`[RetroController] Llamando a Gemini...`);
       const respuesta = await this.geminiClient.generate(prompt, {
         temperature: 0.7,
-        maxTokens: 1024,
+        maxTokens: 2048,
         tipo: 'retroalimentacion_personalizada'
       });
+
+      console.log(`[RetroController] Respuesta recibida de Gemini`);
+      console.log(`[RetroController] Longitud de respuesta: ${respuesta?.length || 0} caracteres`);
+      
+      if (!respuesta || respuesta.trim() === '') {
+        console.error(`[RetroController] PROBLEMA: Gemini devolvió respuesta VACÍA`);
+        console.error(`[RetroController] Prompt usado tenía ${prompt.length} caracteres`);
+        console.error(`[RetroController] Tipo de retroalimentación: ${tipo}`);
+        
+        return res.status(500).json({
+          error: 'Error al generar retroalimentación',
+          mensaje: 'La IA no pudo generar una respuesta. Revisa el prompt.',
+          debug: {
+            promptLength: prompt.length,
+            tipo: tipo,
+            contexto: contexto
+          }
+        });
+      }
+
+      console.log(`[RetroController] Respuesta válida recibida`);
+      console.log(`[RetroController] Primeros 150 chars:`, respuesta.substring(0, 150) + '...');
 
       // Guardar en base de datos
       const retroRepo = AppDataSource.getRepository(RetroalimentacionLlm);
@@ -125,7 +156,8 @@ export class RetroalimentacionController {
         modeloLlmUsado: process.env.GEMINI_MODEL || 'gemini-1.5-flash-002'
       });
 
-      console.log(`[Controller] Retroalimentación guardada con ID: ${retroalimentacion.id}`);
+      console.log(`[RetroController] Retroalimentación guardada con ID: ${retroalimentacion.id}`);
+      console.log(`[RetroController] ========= FIN TEST 13 =========`);
 
       // Registrar en monitor
       await geminiUsageMonitor.registrarLlamada({
@@ -147,7 +179,8 @@ export class RetroalimentacionController {
       });
 
     } catch (error: any) {
-      console.error('[Controller] Error en generarRetroalimentacion:', error);
+      console.error('[RetroController] ERROR en generarRetroalimentacion:', error);
+      console.error('[RetroController] Stack:', error.stack);
       res.status(500).json({
         error: 'Error al generar retroalimentación',
         mensaje: error.message
@@ -156,35 +189,77 @@ export class RetroalimentacionController {
   };
 
   private buildPromptRetroalimentacion(contexto: any, tipo: string): string {
-    let prompt = `Eres un asistente educativo experto. Proporciona retroalimentación constructiva y pedagógica.\n\n`;
+    let prompt = '';
 
     switch (tipo) {
       case 'codigo':
       case 'validacion_codigo':
-        prompt += `CÓDIGO DEL ESTUDIANTE:\n${contexto.codigo}\n\n`;
-        prompt += `LENGUAJE: ${contexto.lenguaje}\n\n`;
-        prompt += `Proporciona retroalimentación sobre este código, destacando:\n`;
-        prompt += `1. Buenas prácticas utilizadas\n`;
-        prompt += `2. Áreas de mejora\n`;
-        prompt += `3. Sugerencias específicas\n`;
+        prompt = `Eres un profesor de programación experto y amigable que está revisando el código de un estudiante.
+
+TAREA: Analiza el siguiente código y proporciona retroalimentación educativa completa.
+
+CÓDIGO DEL ESTUDIANTE:
+\`\`\`${contexto.lenguaje || 'python'}
+${contexto.codigo}
+\`\`\`
+
+LENGUAJE: ${contexto.lenguaje || 'python'}
+
+INSTRUCCIONES DE RESPUESTA:
+1. Identifica errores: Si el código tiene errores de sintaxis o lógica, explícalos claramente
+2. Explica el problema: Usa lenguaje sencillo y educativo
+3. Proporciona la solución: Muestra el código corregido si es necesario
+4. Da sugerencias: Proporciona consejos para mejorar el código
+5. Sé motivador: Termina con un mensaje positivo
+
+EJEMPLO DE RESPUESTA:
+"Tu código tiene un error de sintaxis. En Python, después de la declaración del bucle for debes usar dos puntos (:) antes del bloque de código.
+
+Código corregido:
+\`\`\`python
+for i in range(10):
+    print(i)
+\`\`\`
+
+También recuerda indentar el código dentro del bucle con 4 espacios o un tab. ¡Sigue practicando, vas por buen camino!"
+
+AHORA ANALIZA EL CÓDIGO Y RESPONDE:`;
         break;
 
       case 'quiz':
-        prompt += `PREGUNTA: ${contexto.pregunta}\n`;
-        prompt += `RESPUESTA DEL ESTUDIANTE: ${contexto.respuesta}\n`;
-        prompt += `CORRECTA: ${contexto.es_correcta ? 'Sí' : 'No'}\n\n`;
-        prompt += `Proporciona retroalimentación educativa.\n`;
+        prompt = `Eres un tutor educativo que está proporcionando retroalimentación sobre una respuesta de quiz.
+
+CONTEXTO:
+- Pregunta: ${contexto.pregunta || 'No especificada'}
+- Respuesta del estudiante: ${contexto.respuesta || 'No especificada'}
+- Es correcta: ${contexto.es_correcta ? 'Sí' : 'No'}
+
+INSTRUCCIONES:
+1. Si es correcta: Felicita al estudiante y refuerza el concepto
+2. Si es incorrecta: Explica por qué está mal y proporciona la respuesta correcta
+3. Sé claro y educativo
+4. Proporciona contexto adicional si ayuda al aprendizaje
+
+RESPONDE AHORA:`;
         break;
 
       case 'general':
       default:
-        prompt += `CONTEXTO:\n${JSON.stringify(contexto, null, 2)}\n\n`;
-        prompt += `Proporciona orientación educativa basada en este contexto.\n`;
+        prompt = `Eres un asistente educativo experto en programación. Proporciona orientación clara y útil basada en el siguiente contexto.
+
+CONTEXTO:
+${JSON.stringify(contexto, null, 2)}
+
+INSTRUCCIONES:
+- Proporciona retroalimentación clara y específica
+- Usa ejemplos cuando sea útil
+- Sé motivador y constructivo
+- Enfócate en el aprendizaje del estudiante
+
+RESPONDE AHORA:`;
         break;
     }
 
-    prompt += `\nSé motivador, claro y específico en tu retroalimentación.`;
-    
     return prompt;
   }
 }
