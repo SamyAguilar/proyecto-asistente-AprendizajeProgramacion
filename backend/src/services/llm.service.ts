@@ -1,6 +1,9 @@
 // backend/src/services/llm.service.ts
 
-// Interfaz para la respuesta que Lulu debe dar (según tus requisitos)
+// ===========================================
+// INTERFACES DEL BLOQUE 1: VALIDACIÓN DE CÓDIGO
+// ===========================================
+
 export interface IValidacionResponse {
   resultado: 'correcto' | 'incorrecto' | 'error';
   puntos_obtenidos: number;
@@ -18,10 +21,25 @@ interface IValidacionRequest {
   lenguaje: string;
 }
 
+// ===========================================
+// INTERFACES DEL BLOQUE 2: GENERACIÓN DE QUIZZES
+// ===========================================
+
+interface IGeneracionPreguntasRequest {
+  subtema_id: number;
+  cantidad: number;
+  dificultad: 'básica' | 'intermedia' | 'avanzada';
+  contexto_estudiante: any;
+}
+
+export interface IGeneracionPreguntasResponse {
+  preguntas: Array<any>; // Contiene las preguntas generadas
+}
+
+
 class LLMService {
-    /**
-     * Simula la llamada al servicio de Lulu para validar código.
-     */
+    
+    // MÉTODO DEL BLOQUE 1: EJERCICIOS
     public async validarCodigo(payload: IValidacionRequest): Promise<IValidacionResponse> {
         console.log(`[LLM MOCK] Validando código para Ejercicio ${payload.ejercicio_id}.`);
         
@@ -40,5 +58,26 @@ class LLMService {
             casos_prueba_totales: 5,
         };
     }
+
+    // MÉTODO DEL BLOQUE 2: QUIZZES (EL QUE FALTABA)
+    public async generarPreguntas(payload: IGeneracionPreguntasRequest): Promise<IGeneracionPreguntasResponse> {
+        console.log(`[LLM MOCK] Generando ${payload.cantidad} preguntas para Subtema ${payload.subtema_id} con dificultad ${payload.dificultad}.`);
+        
+        // --- SIMULACIÓN DE RESPUESTA ---
+        const preguntasSimuladas = [];
+        for (let i = 0; i < payload.cantidad; i++) {
+            preguntasSimuladas.push({ 
+                texto: `Pregunta generada ${i + 1} sobre ${payload.subtema_id}`, 
+                opciones: [{ id: 1, texto: 'Opción A' }, { id: 2, texto: 'Opción B (Correcta)' }], 
+                dificultad: payload.dificultad, 
+                retroalimentacion_correcta: 'Esta es la explicación de la respuesta correcta.'
+            });
+        }
+
+        return {
+            preguntas: preguntasSimuladas
+        };
+    }
 }
+
 export const llmService = new LLMService();
