@@ -16,7 +16,7 @@ const userController = new UserController();
  * @route   GET /api/v1/usuarios/perfil
  * @desc    Obtener información del perfil del usuario autenticado
  * @access  Private (requiere token JWT)
- * @returns {Object} - Datos del perfil (id, email, nombre, apellido, rol, matricula, foto_perfil)
+ * @returns {Object} - Datos del perfil (Usuario_id, email, nombre, apellido, rol, matricula, foto_perfil)
  */
 router.get(
   '/perfil',

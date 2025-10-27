@@ -19,7 +19,7 @@ export class UserController {
     try {
       // El usuario ya está autenticado por el middleware
       // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.usuario.id;
+      const usuarioId = req.Usuario_id;
 
       const perfil = await this.userService.obtenerPerfil(usuarioId);
 
@@ -50,7 +50,7 @@ export class UserController {
     try {
       // El usuario ya está autenticado por el middleware
       // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.usuario.id;
+      const usuarioId = req.Usuario_id;
 
       // Extraer solo los campos permitidos
       const { nombre, apellido, fotoPerfil } = req.body;
@@ -123,7 +123,7 @@ export class UserController {
     try {
       // El usuario ya está autenticado por el middleware
       // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.usuario.id;
+      const usuarioId = req.Usuario_id;
 
       const progreso = await this.userService.obtenerProgresoGeneral(usuarioId);
 

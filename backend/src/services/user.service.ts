@@ -47,12 +47,12 @@ export class UserService {
 
   /**
    * Obtener perfil del usuario autenticado
-   * @param usuarioId - ID del usuario autenticado
+   * @param Usuario_id - ID del usuario autenticado
    * @returns Información del perfil del usuario
    */
-  async obtenerPerfil(usuarioId: number) {
+  async obtenerPerfil(Usuario_id: number) {
     const usuario = await this.usuarioRepository.findOne({
-      where: { id: usuarioId },
+      where: { id: Usuario_id },
       select: [
         'id',
         'email',
