@@ -8,6 +8,20 @@ export class RetroalimentacionController {
   constructor(private geminiClient: IGeminiClient) {}
 
   /**
+   * Mapea los tipos simplificados a los tipos reales en la BD
+   */
+  private mapTipoRetroalimentacion(tipoSimple: string): string[] {
+    const mapping: { [key: string]: string[] } = {
+      'codigo': ['validacion_codigo', 'code_validation'],
+      'quiz': ['question_generation', 'quiz'],
+      'chat': ['chat', 'explicar_concepto'],
+      'general': ['retroalimentacion_personalizada', 'general']
+    };
+
+    return mapping[tipoSimple] || [tipoSimple];
+  }
+
+  /**
    * GET /api/v1/retroalimentacion/:usuario_id
    * Obtener historial de retroalimentación de un usuario
    */
@@ -16,8 +30,9 @@ export class RetroalimentacionController {
       const { usuario_id } = req.params;
       const { tipo, limit = 50, offset = 0 } = req.query;
 
-      // Verificar permisos: solo puede ver su propia retroalimentación
-      // o ser admin
+      console.log(`[Controller] Obteniendo historial para usuario ${usuario_id}, tipo: ${tipo || 'todos'}`);
+
+      // Verificar permisos: solo puede ver su propia retroalimentación o ser admin
       if (req.user?.id !== parseInt(usuario_id) && req.user?.rol !== 'admin') {
         return res.status(403).json({
           error: 'No tienes permiso para ver esta retroalimentación'
@@ -34,10 +49,15 @@ export class RetroalimentacionController {
 
       // Filtrar por tipo si se especifica
       if (tipo) {
-        queryBuilder.andWhere('retro.tipo_retroalimentacion = :tipo', { tipo });
+        const tiposReales = this.mapTipoRetroalimentacion(tipo as string);
+        console.log(`[Controller] Mapeando tipo '${tipo}' a:`, tiposReales);
+        
+        queryBuilder.andWhere('retro.tipo_retroalimentacion IN (:...tipos)', { tipos: tiposReales });
       }
 
       const [retroalimentaciones, total] = await queryBuilder.getManyAndCount();
+
+      console.log(`[Controller] Encontradas ${retroalimentaciones.length} retroalimentaciones (total: ${total})`);
 
       res.json({
         success: true,
@@ -76,6 +96,8 @@ export class RetroalimentacionController {
       const { contexto, tipo = 'general' } = req.body;
       const usuario_id = req.user?.id;
 
+      console.log(`[Controller] Generando retroalimentación tipo: ${tipo}`);
+
       if (!contexto) {
         return res.status(400).json({
           error: 'Falta campo requerido: contexto'
@@ -102,6 +124,8 @@ export class RetroalimentacionController {
         generadoPorLlm: true,
         modeloLlmUsado: process.env.GEMINI_MODEL || 'gemini-1.5-flash-002'
       });
+
+      console.log(`[Controller] Retroalimentación guardada con ID: ${retroalimentacion.id}`);
 
       // Registrar en monitor
       await geminiUsageMonitor.registrarLlamada({
@@ -136,8 +160,9 @@ export class RetroalimentacionController {
 
     switch (tipo) {
       case 'codigo':
-        prompt += `**CÓDIGO DEL ESTUDIANTE:**\n${contexto.codigo}\n\n`;
-        prompt += `**LENGUAJE:** ${contexto.lenguaje}\n\n`;
+      case 'validacion_codigo':
+        prompt += `CÓDIGO DEL ESTUDIANTE:\n${contexto.codigo}\n\n`;
+        prompt += `LENGUAJE: ${contexto.lenguaje}\n\n`;
         prompt += `Proporciona retroalimentación sobre este código, destacando:\n`;
         prompt += `1. Buenas prácticas utilizadas\n`;
         prompt += `2. Áreas de mejora\n`;
@@ -145,15 +170,15 @@ export class RetroalimentacionController {
         break;
 
       case 'quiz':
-        prompt += `**PREGUNTA:** ${contexto.pregunta}\n`;
-        prompt += `**RESPUESTA DEL ESTUDIANTE:** ${contexto.respuesta}\n`;
-        prompt += `**CORRECTA:** ${contexto.es_correcta ? 'Sí' : 'No'}\n\n`;
+        prompt += `PREGUNTA: ${contexto.pregunta}\n`;
+        prompt += `RESPUESTA DEL ESTUDIANTE: ${contexto.respuesta}\n`;
+        prompt += `CORRECTA: ${contexto.es_correcta ? 'Sí' : 'No'}\n\n`;
         prompt += `Proporciona retroalimentación educativa.\n`;
         break;
 
       case 'general':
       default:
-        prompt += `**CONTEXTO:**\n${JSON.stringify(contexto, null, 2)}\n\n`;
+        prompt += `CONTEXTO:\n${JSON.stringify(contexto, null, 2)}\n\n`;
         prompt += `Proporciona orientación educativa basada en este contexto.\n`;
         break;
     }
