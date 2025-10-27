@@ -32,7 +32,7 @@ export class GeminiClient implements IGeminiClient {
 
         const generationConfig = {
           temperature: options?.temperature || 0.7,
-          maxOutputTokens: options?.maxTokens || 2048,
+          maxOutputTokens: options?.maxTokens || 1500,  // Reducido de 2048 a 1500 por defecto para evitar respuestas muy largas
         };
 
         console.log(`🤖 [Gemini] Llamando a Gemini (intento ${intentos})...`);

@@ -119,7 +119,7 @@ export class RetroalimentacionController {
       console.log(`[RetroController] Llamando a Gemini...`);
       const respuesta = await this.geminiClient.generate(prompt, {
         temperature: 0.7,
-        maxTokens: 2048,
+        maxTokens: 1500,  // Reducido de 2048 a 1500 para evitar respuestas muy largas
         tipo: 'retroalimentacion_personalizada'
       });
 

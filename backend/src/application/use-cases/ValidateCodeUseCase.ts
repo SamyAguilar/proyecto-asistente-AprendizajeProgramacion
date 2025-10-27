@@ -72,13 +72,13 @@ export class ValidateCodeUseCase {
       }
 
       // 3. No está en ningún caché, construir prompt y llamar a Gemini
-      console.log('❌ [UseCase] No encontrado en caché - Llamando a Gemini');
+      console.log(' [UseCase] No encontrado en caché - Llamando a Gemini');
       const prompt = this.buildPrompt(request);
 
-      console.log('🤖 [UseCase] Llamando a Gemini...');
+      console.log(' [UseCase] Llamando a Gemini...');
       const respuestaGemini = await this.geminiClient.generate(prompt, {
         temperature: 0.3,
-        maxTokens: 2500,  // ✅ AUMENTADO de 1500 a 2500
+        maxTokens: 1500,  // Límite seguro para evitar respuestas muy largas
         tipo: 'code_validation'
       });
 
@@ -128,16 +128,16 @@ export class ValidateCodeUseCase {
         });
 
         await retroalimentacionRepo.save(retroalimentacion);
-        console.log('💾 [UseCase] Retroalimentación guardada en BD');
+        console.log(' [UseCase] Retroalimentación guardada en BD');
       } catch (dbError: any) {
-        console.warn('⚠️ [UseCase] Error al guardar en BD (continuando):', dbError.message);
+        console.warn(' [UseCase] Error al guardar en BD (continuando):', dbError.message);
       }
 
-      console.log(`✓ [UseCase] Validación completada: ${response.resultado}`);
+      console.log(` [UseCase] Validación completada: ${response.resultado}`);
       return response;
 
     } catch (error: any) {
-      console.error('❌ [UseCase] Error:', error.message);
+      console.error(' [UseCase] Error:', error.message);
       return {
         resultado: 'error',
         puntos_obtenidos: 0,
@@ -170,30 +170,32 @@ ${request.codigo_enviado}
 ${JSON.stringify(request.casos_prueba, null, 2)}
 
 **INSTRUCCIONES:**
-1. Analiza el código y verifica si es correcto, Análisis de lo que el estudiante hizo bien
+1. Analiza el código y verifica si es correcto
 2. Evalúa si pasa los casos de prueba
-3. Identifica errores de sintaxis o lógica y explicación del por qué
-4. Proporciona retroalimentación educativa CONCISA (máximo 4-5 oraciones)
-5. Sugiere mejoras específicas para corregir errores o mejorar el código
-5. Recursos para aprender los conceptos faltantes
+3. Identifica errores de sintaxis o lógica (máximo 2 errores principales)
+4. Proporciona retroalimentación educativa MUY BREVE (máximo 3 oraciones)
+5. Sugiere 2-3 mejoras específicas y concretas
+6. Máximo 1-2 recursos de aprendizaje
 
 **TONO:** Alentador, educativo, sin ser condescendiente.
 
 **IMPORTANTE:** 
 - Responde ÚNICAMENTE en formato JSON válido
 - NO uses bloques de código markdown (no uses \`\`\`json)
-- Mantén la retroalimentación_educativa BREVE (máximo 350 palabras)
+- Mantén la retroalimentación_educativa MUY BREVE (máximo 150 palabras, aproximadamente 5 oraciones)
+- Los errores deben ser concisos (máximo 15 palabras cada uno)
+- Las sugerencias deben ser breves (máximo 10 palabras cada una)
 - Responde solo el objeto JSON puro
 
 
 **RESPONDE EN ESTE FORMATO JSON EXACTO:**
 {
   "resultado": "correcto" | "incorrecto" | "error",
-  "errores_encontrados": ["lista de errores específicos y el porque"],
+  "errores_encontrados": ["Error breve 1 (max 15 palabras)", "Error breve 2 (max 15 palabras)"],
   "casos_prueba_pasados": número de casos que pasa,
   "casos_prueba_totales": ${Array.isArray(request.casos_prueba) ? request.casos_prueba.length : 0},
-  "retroalimentacion_educativa": "Explicación pedagógica BREVE de qué hizo bien o mal y cómo mejorar y Recursos para aprender los conceptos faltantes y una pequeña sugerencia de guía de estudio",
-  "sugerencias_mejora": ["sugerencia 1", "sugerencia 2"]
+  "retroalimentacion_educativa": "Explicación MUY BREVE (máximo 150 palabras): qué hizo bien/mal, cómo mejorar, 1-2 recursos",
+  "sugerencias_mejora": ["Sugerencia breve 1 (max 10 palabras)", "Sugerencia breve 2 (max 10 palabras)"]
 }`;
   }
 

@@ -16,7 +16,7 @@ export class RetroalimentacionLlm {
   tipoRetroalimentacion: string;
 
   @Column({ type: 'text', name: 'contenido_retroalimentacion' })
-  @IsNotEmpty({ message: 'El contenido de la retroalimentación es requerido' })
+  @IsNotEmpty({ message:  'El contenido de la retroalimentación es requerido' })
   contenidoRetroalimentacion: string;
 
   @Column({ type: 'jsonb', nullable: true, name: 'contexto_original' })
