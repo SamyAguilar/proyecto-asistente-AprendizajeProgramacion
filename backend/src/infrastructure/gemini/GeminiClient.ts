@@ -19,7 +19,6 @@ export class GeminiClient implements IGeminiClient {
     this.model = this.genAI.getGenerativeModel({ 
       model: modelName
     });
-
     console.log(`✓ GeminiClient inicializado con modelo: ${modelName}`);
   }
 

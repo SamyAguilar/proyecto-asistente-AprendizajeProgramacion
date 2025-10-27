@@ -18,8 +18,15 @@ export class UserController {
   async obtenerPerfil(req: Request, res: Response): Promise<void> {
     try {
       // El usuario ya está autenticado por el middleware
-      // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.Usuario_id;
+      // authMiddleware guarda el userId en req.userId
+      const usuarioId = req.userId;
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
 
       const perfil = await this.userService.obtenerPerfil(usuarioId);
 
@@ -49,8 +56,15 @@ export class UserController {
   async actualizarPerfil(req: Request, res: Response): Promise<void> {
     try {
       // El usuario ya está autenticado por el middleware
-      // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.Usuario_id;
+      // authMiddleware guarda el userId en req.userId
+      const usuarioId = req.userId;
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
 
       // Extraer solo los campos permitidos
       const { nombre, apellido, fotoPerfil } = req.body;
@@ -122,8 +136,15 @@ export class UserController {
   async obtenerProgresoGeneral(req: Request, res: Response): Promise<void> {
     try {
       // El usuario ya está autenticado por el middleware
-      // @ts-ignore - req.usuario se agrega en el authMiddleware
-      const usuarioId = req.Usuario_id;
+      // authMiddleware guarda el userId en req.userId
+      const usuarioId = req.userId;
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
 
       const progreso = await this.userService.obtenerProgresoGeneral(usuarioId);
 

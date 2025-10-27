@@ -13,7 +13,7 @@ export class GenerateQuestionsUseCase {
   ) {}
 
   async execute(request: GenerarPreguntasRequest): Promise<GenerarPreguntasResponse> {
-    console.log('🔍 [UseCase] Iniciando generación de preguntas...');
+    console.log('[UseCase] Iniciando generación de preguntas...');
 
     try {
       // 1. Buscar en caché primero
@@ -24,7 +24,7 @@ export class GenerateQuestionsUseCase {
       );
 
       if (cacheResult.encontrado && cacheResult.data.length >= request.cantidad) {
-        console.log(`✓ [UseCase] ${cacheResult.data.length} preguntas encontradas en caché`);
+        console.log(`OK [UseCase] ${cacheResult.data.length} preguntas encontradas en caché`);
         return {
           preguntas: cacheResult.data.slice(0, request.cantidad),
           subtema_id: request.subtema_id,
@@ -46,10 +46,10 @@ export class GenerateQuestionsUseCase {
       // 3. Construir prompt para Gemini (Prompt 1 del documento)
       const prompt = this.buildPrompt(subtema, request);
 
-      console.log('🤖 [UseCase] Llamando a Gemini para generar preguntas...');
+      console.log('GEMINI [UseCase] Llamando a Gemini para generar preguntas...');
       const respuestaGemini = await this.geminiClient.generate(prompt, {
         temperature: 0.7,
-        maxTokens: 2048,
+        maxTokens: 6000,
         tipo: 'question_generation'
       });
 
@@ -65,7 +65,7 @@ export class GenerateQuestionsUseCase {
       // 7. Guardar en caché
       await this.cacheService.guardarPreguntasEnCache(request.subtema_id, preguntasGeneradas);
 
-      console.log(`✓ [UseCase] ${preguntasGeneradas.length} preguntas generadas y guardadas`);
+      console.log(`OK [UseCase] ${preguntasGeneradas.length} preguntas generadas y guardadas`);
 
       return {
         preguntas: preguntasGeneradas.slice(0, request.cantidad),
@@ -74,115 +74,285 @@ export class GenerateQuestionsUseCase {
       };
 
     } catch (error: any) {
-      console.error('❌ [UseCase] Error al generar preguntas:', error.message);
+      console.error('ERROR [UseCase] Error al generar preguntas:', error.message);
       throw new Error(`Error al generar preguntas: ${error.message}`);
     }
   }
 
+  /**
+   * PROMPT 1 del documento (Generación de Preguntas)
+   * Optimizado para respuestas concisas y evitar truncamiento
+   */
   private buildPrompt(subtema: Subtema, request: GenerarPreguntasRequest): string {
-    return `
-Eres un EXPERTO en educación de programación. Tu tarea es generar preguntas de quiz de alta calidad.
+    return `Eres un experto en educación. Genera ${request.cantidad} preguntas de opción múltiple.
 
-**CONTEXTO DEL SUBTEMA:**
-- Tema: ${subtema.tema?.nombre || 'N/A'}
-- Subtema: ${subtema.nombre}
-- Descripción: ${subtema.descripcion}
-- Contenido: ${subtema.contenidoDetalle || 'Ver descripción'}
+CONTEXTO:
+Tema: ${subtema.tema?.nombre || 'N/A'}
+Subtema: ${subtema.nombre}
+Contenido: ${subtema.contenidoDetalle?.substring(0, 200) || subtema.descripcion}
 
-**REQUISITOS:**
-- Generar ${request.cantidad} preguntas de opción múltiple
+REQUISITOS:
+- ${request.cantidad} preguntas
 - Dificultad: ${request.dificultad}
-- 4 opciones por pregunta (solo 1 correcta)
-- Distractores plausibles (opciones incorrectas que parezcan correctas)
-- Explicaciones pedagógicas
+- 4 opciones (1 correcta)
+- Explicaciones MUY BREVES (máximo 10 palabras cada una)
 
-**FORMATO DE RESPUESTA (JSON):**
+IMPORTANTE:
+- Responde SOLO JSON válido
+- NO uses markdown
+- Explicaciones de máximo 10 palabras
+- Retroalimentaciones de máximo 20 palabras
+
+FORMATO JSON:
 {
   "preguntas": [
     {
-      "texto": "¿Pregunta clara y específica?",
+      "texto": "Pregunta clara",
       "opciones": [
-        {
-          "texto": "Opción A",
-          "es_correcta": true,
-          "explicacion": "Por qué es correcta"
-        },
-        {
-          "texto": "Opción B",
-          "es_correcta": false,
-          "explicacion": "Por qué es incorrecta"
-        },
-        {
-          "texto": "Opción C",
-          "es_correcta": false,
-          "explicacion": "Por qué es incorrecta"
-        },
-        {
-          "texto": "Opción D",
-          "es_correcta": false,
-          "explicacion": "Por qué es incorrecta"
-        }
+        {"texto": "Opción A", "es_correcta": true, "explicacion": "Breve (max 10 palabras)"},
+        {"texto": "Opción B", "es_correcta": false, "explicacion": "Breve (max 10 palabras)"},
+        {"texto": "Opción C", "es_correcta": false, "explicacion": "Breve (max 10 palabras)"},
+        {"texto": "Opción D", "es_correcta": false, "explicacion": "Breve (max 10 palabras)"}
       ],
       "dificultad": "${request.dificultad}",
-      "retroalimentacion_correcta": "¡Excelente! Explicación detallada...",
-      "retroalimentacion_incorrecta": "No es correcto. La respuesta correcta es... porque...",
-      "explicacion_detallada": "Explicación profunda del concepto",
+      "retroalimentacion_correcta": "Breve (max 20 palabras)",
+      "retroalimentacion_incorrecta": "Breve (max 20 palabras)",
+      "explicacion_detallada": "Breve (max 30 palabras)",
       "puntos": 10
     }
   ]
 }
 
-**CRITERIOS DE CALIDAD:**
-1. Preguntas claras y sin ambigüedad
-2. Cubrir diferentes aspectos del subtema
-3. Distractores basados en errores comunes
-4. Explicaciones que enseñen, no solo corrijan
-5. Progresión de dificultad si se solicitan múltiples preguntas
-
-Responde SOLO con el JSON, sin texto adicional.
-`;
+Responde SOLO el JSON.`;
   }
 
+  /**
+   * Parsea la respuesta de Gemini y extrae el JSON de preguntas
+   * Maneja respuestas truncadas y con formato markdown
+   */
   private parseResponse(respuesta: string): PreguntaGenerada[] {
     try {
-      // Buscar JSON en la respuesta
-      const jsonMatch = respuesta.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No se encontró JSON en la respuesta');
+      console.log('DEBUG [Parse] Iniciando parseo de preguntas...');
+      console.log('INFO [Parse] Longitud de respuesta:', respuesta.length);
+      
+      // Verificar si la respuesta está vacía
+      if (!respuesta || respuesta.trim().length === 0) {
+        console.error('ERROR [Parse] La respuesta de Gemini está vacía');
+        throw new Error('Respuesta vacía de Gemini');
+      }
+      
+      // Limpiar la respuesta: remover bloques de código markdown
+      let cleanResponse = respuesta.trim();
+      
+      // Remover múltiples variantes de bloques markdown
+      cleanResponse = cleanResponse
+        .replace(/^```json\s*/i, '')
+        .replace(/^```javascript\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      
+      console.log('CLEAN [Parse] Longitud después de limpieza:', cleanResponse.length);
+      
+      // Buscar el primer { y el último }
+      const primerLlave = cleanResponse.indexOf('{');
+      let ultimaLlave = cleanResponse.lastIndexOf('}');
+      
+      console.log('DEBUG [Parse] Índice primera llave {:', primerLlave);
+      console.log('DEBUG [Parse] Índice última llave }:', ultimaLlave);
+      
+      // SUCCESS MANEJO DE RESPUESTA TRUNCADA
+      if (primerLlave === -1 || ultimaLlave === -1 || ultimaLlave < primerLlave) {
+        console.warn('WARNING [Parse] Respuesta parece truncada - intentando reparar JSON...');
+        console.log('INFO [Parse] Respuesta recibida:', cleanResponse.substring(0, 500));
+        
+        // Intentar agregar las llaves de cierre faltantes
+        if (primerLlave !== -1 && ultimaLlave === -1) {
+          console.log('REPAIR [Parse] Agregando llaves de cierre faltantes...');
+          // Cerrar el array de preguntas y el objeto principal
+          cleanResponse += '\n      ]\n    }\n  ]\n}';
+          ultimaLlave = cleanResponse.lastIndexOf('}');
+          console.log('REPAIR [Parse] Nueva última llave }:', ultimaLlave);
+        } else {
+          throw new Error('No se encontró JSON válido en la respuesta');
+        }
       }
 
-      const parsed = JSON.parse(jsonMatch[0]);
+      const jsonStr = cleanResponse.substring(primerLlave, ultimaLlave + 1);
+      console.log('EXTRACT [Parse] JSON extraído (longitud):', jsonStr.length);
+      console.log('EXTRACT [Parse] JSON extraído (primeros 500):', jsonStr.substring(0, 500));
       
+      // Intentar parsear
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonStr);
+        console.log('SUCCESS [Parse] JSON parseado correctamente');
+      } catch (parseError: any) {
+        console.error('ERROR [Parse] Error en JSON.parse:', parseError.message);
+        console.error('INFO [Parse] String que causó el error:', jsonStr.substring(0, 1000));
+        
+        // Último intento: reparar JSON malformado común en arrays
+        try {
+          console.log('REPAIR [Parse] Intentando reparar JSON malformado...');
+          let repairedJson = jsonStr;
+          
+          // CRÍTICO: Si el error es por string incompleto, encontrar y cerrar
+          if (parseError.message.includes('Expected') || parseError.message.includes('Unexpected')) {
+            console.log('REPAIR [Parse] Detectado string incompleto, buscando última estructura válida...');
+            
+            // Encontrar la última coma antes del error para truncar ahí
+            const errorPos = parseError.message.match(/position (\d+)/);
+            if (errorPos) {
+              const pos = parseInt(errorPos[1]);
+              // Buscar hacia atrás desde la posición del error hasta encontrar una estructura completa
+              let truncatePos = pos;
+              
+              // Buscar el último objeto completo antes del error
+              for (let i = pos - 1; i >= 0; i--) {
+                if (repairedJson[i] === '}' && repairedJson[i-1] !== '"') {
+                  // Encontramos el cierre de un objeto, verificar si hay una coma después
+                  let j = i + 1;
+                  while (j < repairedJson.length && /\s/.test(repairedJson[j])) j++;
+                  if (repairedJson[j] === ',') {
+                    truncatePos = j + 1;
+                    break;
+                  }
+                }
+              }
+              
+              console.log('REPAIR [Parse] Truncando en posición:', truncatePos);
+              repairedJson = repairedJson.substring(0, truncatePos);
+            }
+            
+            // Limpiar cualquier string o valor incompleto al final
+            repairedJson = repairedJson.replace(/,\s*$/, '');  // Quitar coma final
+            repairedJson = repairedJson.replace(/"\s*:\s*"[^"]*$/, '');  // Quitar string incompleto
+            repairedJson = repairedJson.replace(/"\s*:\s*[^,}\]]*$/, '');  // Quitar valor incompleto
+          }
+          
+          // Si hay una coma colgando antes del cierre de array, quitarla
+          repairedJson = repairedJson.replace(/,(\s*)\]/g, '$1]');
+          // Si hay una coma colgando antes del cierre de objeto, quitarla
+          repairedJson = repairedJson.replace(/,(\s*)\}/g, '$1}');
+          
+          // Si termina abruptamente, intentar cerrar estructuras
+          const lastChar = repairedJson.trim().slice(-1);
+          if (lastChar !== '}' && lastChar !== ']') {
+            console.log('REPAIR [Parse] JSON no termina correctamente, agregando cierres...');
+            
+            // Contar llaves y corchetes abiertos vs cerrados
+            const openBraces = (repairedJson.match(/\{/g) || []).length;
+            const closeBraces = (repairedJson.match(/\}/g) || []).length;
+            const openBrackets = (repairedJson.match(/\[/g) || []).length;
+            const closeBrackets = (repairedJson.match(/\]/g) || []).length;
+            
+            console.log('REPAIR [Parse] Llaves abiertas:', openBraces, 'cerradas:', closeBraces);
+            console.log('REPAIR [Parse] Corchetes abiertos:', openBrackets, 'cerrados:', closeBrackets);
+            
+            // Primero cerrar objetos, luego arrays (orden importante)
+            const bracesToClose = openBraces - closeBraces;
+            const bracketsToClose = openBrackets - closeBrackets;
+            
+            // Agregar cierres en el orden correcto
+            for (let i = 0; i < bracesToClose; i++) {
+              repairedJson += '\n}';
+            }
+            for (let i = 0; i < bracketsToClose; i++) {
+              repairedJson += '\n]';
+            }
+          }
+          
+          console.log('REPAIR [Parse] JSON reparado (longitud):', repairedJson.length);
+          console.log('REPAIR [Parse] Últimos 200 chars:', repairedJson.substring(repairedJson.length - 200));
+          
+          parsed = JSON.parse(repairedJson);
+          console.log('SUCCESS [Parse] JSON reparado y parseado correctamente');
+        } catch (repairError: any) {
+          console.error('ERROR [Parse] Fallo en reparación:', repairError.message);
+          throw new Error(`Error parseando JSON: ${parseError.message}`);
+        }
+      }
+      
+      // Validar estructura básica
       if (!parsed.preguntas || !Array.isArray(parsed.preguntas)) {
+        console.error('ERROR [Parse] Formato inválido: falta array de preguntas');
         throw new Error('Formato de respuesta inválido: falta array de preguntas');
       }
-
-      return parsed.preguntas;
+      
+      console.log(`SUCCESS [Parse] ${parsed.preguntas.length} preguntas parseadas correctamente`);
+      
+      // Asegurar que todas las preguntas tengan los campos necesarios
+      const preguntasValidadas = parsed.preguntas.map((p: any, index: number) => {
+        console.log(`DEBUG [Parse] Validando pregunta ${index + 1}...`);
+        
+        return {
+          texto: p.texto || `Pregunta ${index + 1}`,
+          opciones: (p.opciones || []).map((o: any, i: number) => ({
+            texto: o.texto || `Opción ${i + 1}`,
+            es_correcta: o.es_correcta || false,
+            explicacion: o.explicacion || 'Sin explicación'
+          })),
+          dificultad: p.dificultad || 'intermedia',
+          retroalimentacion_correcta: p.retroalimentacion_correcta || '¡Correcto!',
+          retroalimentacion_incorrecta: p.retroalimentacion_incorrecta || 'Incorrecto.',
+          explicacion_detallada: p.explicacion_detallada || p.retroalimentacion_correcta || 'Ver retroalimentación',
+          puntos: p.puntos || 10
+        };
+      });
+      
+      return preguntasValidadas;
+      
     } catch (error: any) {
-      console.error('Error al parsear respuesta:', error);
-      throw new Error('Respuesta inválida de Gemini');
+      console.error('ERROR [Parse] Error general en parseResponse:', error.message);
+      console.error('INFO [Parse] Respuesta original (primeros 2000 chars):', respuesta.substring(0, 2000));
+      throw new Error(`Respuesta inválida de Gemini: ${error.message}`);
     }
   }
 
   private validateQuestions(preguntas: PreguntaGenerada[]): void {
-    for (const pregunta of preguntas) {
-      if (!pregunta.texto || !pregunta.opciones || pregunta.opciones.length !== 4) {
-        throw new Error('Pregunta inválida: debe tener texto y exactamente 4 opciones');
+    console.log(`DEBUG [Validate] Validando ${preguntas.length} preguntas...`);
+    
+    if (preguntas.length === 0) {
+      throw new Error('No se generaron preguntas');
+    }
+    
+    for (let i = 0; i < preguntas.length; i++) {
+      const pregunta = preguntas[i];
+      console.log(`DEBUG [Validate] Pregunta ${i + 1}: "${pregunta.texto?.substring(0, 50)}..."`);
+      
+      if (!pregunta.texto || typeof pregunta.texto !== 'string') {
+        throw new Error(`Pregunta ${i + 1} inválida: debe tener texto válido`);
+      }
+      
+      if (!pregunta.opciones || !Array.isArray(pregunta.opciones)) {
+        throw new Error(`Pregunta ${i + 1} inválida: debe tener array de opciones`);
+      }
+      
+      if (pregunta.opciones.length !== 4) {
+        console.warn(`WARNING [Validate] Pregunta ${i + 1} tiene ${pregunta.opciones.length} opciones (esperadas: 4)`);
+        // No lanzar error, solo advertir
       }
 
       const correctas = pregunta.opciones.filter(o => o.es_correcta);
       if (correctas.length !== 1) {
-        throw new Error('Pregunta inválida: debe tener exactamente 1 opción correcta');
+        throw new Error(`Pregunta ${i + 1} inválida: debe tener exactamente 1 opción correcta (tiene ${correctas.length})`);
       }
     }
+    
+    console.log(`SUCCESS [Validate] Todas las preguntas son válidas`);
   }
 
   private async saveQuestionsToDatabase(preguntas: PreguntaGenerada[], subtema_id: number): Promise<void> {
     try {
+      console.log(`SAVE [Save] Guardando ${preguntas.length} preguntas en BD...`);
+      
       const preguntaRepo = AppDataSource.getRepository(PreguntaQuiz);
       const opcionRepo = AppDataSource.getRepository(OpcionRespuesta);
 
-      for (const pregunta of preguntas) {
+      for (let i = 0; i < preguntas.length; i++) {
+        const pregunta = preguntas[i];
+        console.log(`SAVE [Save] Guardando pregunta ${i + 1}/${preguntas.length}...`);
+        
         // Crear pregunta
         const nuevaPregunta = preguntaRepo.create({
           subtemaId: subtema_id,
@@ -195,25 +365,30 @@ Responde SOLO con el JSON, sin texto adicional.
         });
 
         const preguntaGuardada = await preguntaRepo.save(nuevaPregunta);
+        console.log(`OK [Save] Pregunta ${i + 1} guardada con ID: ${preguntaGuardada.id}`);
 
         // Crear opciones
-        for (let i = 0; i < pregunta.opciones.length; i++) {
-          const opcion = pregunta.opciones[i];
+        for (let j = 0; j < pregunta.opciones.length; j++) {
+          const opcion = pregunta.opciones[j];
           const nuevaOpcion = opcionRepo.create({
             preguntaId: preguntaGuardada.id,
             textoOpcion: opcion.texto,
             esCorrecta: opcion.es_correcta,
             explicacion: opcion.explicacion,
-            orden: i + 1
+            orden: j + 1
           });
 
           await opcionRepo.save(nuevaOpcion);
         }
+        
+        console.log(`OK [Save] ${pregunta.opciones.length} opciones guardadas para pregunta ${i + 1}`);
       }
 
-      console.log(`💾 [UseCase] ${preguntas.length} preguntas guardadas en BD`);
+      console.log(`SUCCESS [Save] ${preguntas.length} preguntas guardadas exitosamente en BD`);
     } catch (error: any) {
-      console.warn('⚠️ [UseCase] Error al guardar en BD (continuando):', error.message);
+      console.error('ERROR [Save] Error al guardar en BD:', error.message);
+      console.warn('WARNING [Save] Continuando sin guardar en BD...');
+      // No lanzar error para no interrumpir el flujo
     }
   }
 }

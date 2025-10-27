@@ -47,12 +47,12 @@ export class UserService {
 
   /**
    * Obtener perfil del usuario autenticado
-   * @param Usuario_id - ID del usuario autenticado
+   * @param usuarioId - ID del usuario autenticado
    * @returns Información del perfil del usuario
    */
-  async obtenerPerfil(Usuario_id: number) {
+  async obtenerPerfil(usuarioId: number) {
     const usuario = await this.usuarioRepository.findOne({
-      where: { id: Usuario_id },
+      where: { id: usuarioId },
       select: [
         'id',
         'email',
@@ -149,9 +149,10 @@ export class UserService {
    * @returns Progreso general y por materia
    */
   async obtenerProgresoGeneral(usuarioId: number): Promise<ProgresoGeneralDto> {
+    // ✅ CORRECCIÓN: Cambiar 'progreso' por 'progresos' (plural)
     const usuario = await this.usuarioRepository.findOne({
       where: { id: usuarioId },
-      relations: ['matriculas', 'matriculas.materia', 'progreso', 'progreso.tema']
+      relations: ['matriculas', 'matriculas.materia', 'progresos', 'progresos.tema']
     });
 
     if (!usuario) {
@@ -181,6 +182,7 @@ export class UserService {
       [usuarioId]
     );
 
+    // ✅ CORRECCIÓN: Cambiar 'usuario.progreso' por 'usuario.progresos' (plural)
     // Calcular progreso por tema
     const progresosPorTema = usuario.progresos || [];
     const temasCompletados = progresosPorTema.filter(
@@ -205,7 +207,7 @@ export class UserService {
 
         // Obtener progreso en los temas de esta materia
         const temasCompletadosMateria = progresosPorTema.filter(
-          p => p.tema.materiaId === matricula.materia.id && p.estado === 'completado'
+          p => p.tema?.materiaId === matricula.materia.id && p.estado === 'completado'
         ).length;
 
         // Calcular porcentaje de progreso
