@@ -11,3 +11,4 @@ export { PreguntaQuiz, TipoPregunta, DificultadPregunta } from './PreguntaQuiz';
 export { OpcionRespuesta } from './OpcionRespuesta';
 export { IntentoQuiz } from './IntentoQuiz';
 export { RetroalimentacionLlm } from './RetroalimentacionLlm';
+export { GeminiUsageLog } from './GeminiUsageLog';
