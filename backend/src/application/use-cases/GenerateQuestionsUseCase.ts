@@ -49,7 +49,7 @@ export class GenerateQuestionsUseCase {
       console.log('GEMINI [UseCase] Llamando a Gemini para generar preguntas...');
       const respuestaGemini = await this.geminiClient.generate(prompt, {
         temperature: 0.7,
-        maxTokens: 3000,  // Reducido de 6000 a 3000 para evitar respuestas muy largas
+        maxTokens: 6000,  // Reducido de 6000 a 3000 para evitar respuestas muy largas
         tipo: 'question_generation'
       });
 
@@ -95,7 +95,7 @@ REQUISITOS:
 - ${request.cantidad} preguntas
 - Dificultad: ${request.dificultad}
 - 4 opciones (1 correcta)
-- Explicaciones ULTRA BREVES (máximo 8 palabras cada una)
+- Explicaciones MUY BREVES (máximo 10 palabras cada una)
 
 IMPORTANTE - LÍMITES ESTRICTOS:
 - Responde SOLO JSON válido sin markdown

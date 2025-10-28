@@ -243,7 +243,7 @@ Responde SOLO con el JSON, sin texto adicional.
 
       const respuesta = await this.validateCodeUseCase['geminiClient'].generate(prompt, {
         temperature: 0.5,
-        maxTokens: 1500,  // Reducido de 2048 a 1500 para evitar respuestas muy largas
+        maxTokens: 2048,  // Reducido de 2048 a 1500 para evitar respuestas muy largas
         tipo: 'code_explanation'
       });
 

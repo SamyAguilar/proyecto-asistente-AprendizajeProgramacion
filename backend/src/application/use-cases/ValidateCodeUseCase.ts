@@ -78,7 +78,7 @@ export class ValidateCodeUseCase {
       console.log(' [UseCase] Llamando a Gemini...');
       const respuestaGemini = await this.geminiClient.generate(prompt, {
         temperature: 0.3,
-        maxTokens: 1500,  // Límite seguro para evitar respuestas muy largas
+        maxTokens: 2500,  // Límite seguro para evitar respuestas muy largas
         tipo: 'code_validation'
       });
 
@@ -172,9 +172,9 @@ ${JSON.stringify(request.casos_prueba, null, 2)}
 **INSTRUCCIONES:**
 1. Analiza el código y verifica si es correcto
 2. Evalúa si pasa los casos de prueba
-3. Identifica errores de sintaxis o lógica (máximo 2 errores principales)
+3. Identifica errores de sintaxis o lógica y da una explicación del por qué (máximo 2 errores principales) 
 4. Proporciona retroalimentación educativa MUY BREVE (máximo 3 oraciones)
-5. Sugiere 2-3 mejoras específicas y concretas
+5. Sugiere 2-3 mejoras específicas y concretas para corregir errores o mejorar el código
 6. Máximo 1-2 recursos de aprendizaje
 
 **TONO:** Alentador, educativo, sin ser condescendiente.
@@ -191,7 +191,7 @@ ${JSON.stringify(request.casos_prueba, null, 2)}
 **RESPONDE EN ESTE FORMATO JSON EXACTO:**
 {
   "resultado": "correcto" | "incorrecto" | "error",
-  "errores_encontrados": ["Error breve 1 (max 15 palabras)", "Error breve 2 (max 15 palabras)"],
+  "errores_encontrados": ["Error breve 1 (max 15 palabras) y el porque", "Error breve 2 (max 15 palabras) y el porque"],
   "casos_prueba_pasados": número de casos que pasa,
   "casos_prueba_totales": ${Array.isArray(request.casos_prueba) ? request.casos_prueba.length : 0},
   "retroalimentacion_educativa": "Explicación MUY BREVE (máximo 150 palabras): qué hizo bien/mal, cómo mejorar, 1-2 recursos",
