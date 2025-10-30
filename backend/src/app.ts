@@ -13,8 +13,11 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import { createGeminiRoutes } from './routes/gemini.routes';
 import { createRetroalimentacionRoutes } from './routes/retroalimentacion.routes';
+import quizRoutes from './routes/quiz.routes'; // <-- IMPORTACIÓN DE TUS RUTAS
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 // ============================================
 // MIDDLEWARES GLOBALES
 // ============================================
@@ -22,8 +25,12 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 // CORS
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true
+  origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+//   origin: process.env.CORS_ORIGIN || '*',
+//   credentials: true
 }));
 // Parser de JSON
 app.use(express.json());
@@ -32,31 +39,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use(httpLogger);
 // Rate limiting general
 app.use(generalRateLimiter);
+
 // ============================================
 // RUTAS
 // ============================================
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'Servidor funcionando correctamente',
-    timestamp: new Date().toISOString()
-  });
+  res.status(200).json({
+    status: 'OK',
+    message: 'Servidor funcionando correctamente',
+    timestamp: new Date().toISOString()
+  });
 });
+
 // Rutas de autenticacion
 app.use('/api/v1/auth', authRoutes);
 // Rutas de usuarios (requieren autenticacion)
 app.use('/api/v1/usuarios', userRoutes);
+
+// Rutas de Quiz (¡IMPLEMENTACIÓN DE PANCHO!)
+app.use('/api/v1/quiz', quizRoutes); // <-- RUTA DE QUIZ AGREGADA
+
 // Rutas de Gemini AI (validación de código con IA)
 app.use('/api/v1/gemini', createGeminiRoutes());
 // Rutas de Retroalimentación (historial y generación)
 app.use('/api/v1/retroalimentacion', createRetroalimentacionRoutes());
-// TODO: Agregar mas rutas aqui cuando se implementen
-// app.use('/api/v1/materias', materiasRoutes);
-// app.use('/api/v1/temas', temasRoutes);
-// app.use('/api/v1/ejercicios', ejerciciosRoutes);
-// app.use('/api/v1/quiz', quizRoutes);
-// app.use('/api/v1/reportes', reportesRoutes);
+
 // ============================================
 // MANEJO DE ERRORES
 // ============================================
@@ -64,57 +72,63 @@ app.use('/api/v1/retroalimentacion', createRetroalimentacionRoutes());
 app.use(notFoundHandler);
 // Error handler global
 app.use(errorHandler);
+
 // ============================================
 // INICIAR SERVIDOR
 // ============================================
 async function iniciarServidor() {
-  try {
-    // 1. Conectar a la base de datos
-    await AppDataSource.initialize();
-    console.log(' Conexion a base de datos establecida');
-    // 2. Iniciar servidor
-    app.listen(PORT, () => {
-      console.log(`\n Servidor corriendo en puerto ${PORT}`);
-      console.log(` Entorno: ${process.env.NODE_ENV || 'development'}`);
-      console.log(` Health check: http://localhost:${PORT}/health`);
-      console.log('\n Endpoints disponibles:');
-      console.log('   POST   /api/v1/auth/registro');
-      console.log('   POST   /api/v1/auth/login');
-      console.log('   POST   /api/v1/auth/refresh-token');
-      console.log('   POST   /api/v1/auth/logout');
-      console.log('   GET    /api/v1/usuarios/perfil        (requiere auth)');
-      console.log('   PUT    /api/v1/usuarios/perfil        (requiere auth)');
-      console.log('   GET    /api/v1/usuarios/progreso      (requiere auth)');
-      console.log('\n 🤖 Endpoints de IA (Gemini):');
-      console.log('   POST   /api/v1/gemini/validate-code      (auth + 15 RPM)');
-      console.log('   POST   /api/v1/gemini/generate-questions (auth + 15 RPM)');
-      console.log('   POST   /api/v1/gemini/chat               (auth + 15 RPM)');
-      console.log('   POST   /api/v1/gemini/explicar-concepto  (auth + 15 RPM)');
-      console.log('   POST   /api/v1/gemini/generar-explicacion (auth + 15 RPM)');
-      console.log('   GET    /api/v1/gemini/stats              (monitoreo)');
-      console.log('\n 📝 Endpoints de Retroalimentación:');
-      console.log('   GET    /api/v1/retroalimentacion/:usuario_id (auth)');
-      console.log('   POST   /api/v1/retroalimentacion/generar     (auth + 15 RPM)');
-      console.log('\n Servidor listo para recibir peticiones\n');
-           logAppStart(Number(PORT), process.env.NODE_ENV || 'development');
-    });
-  } catch (error) {
-    console.error(' Error al iniciar servidor:', error);
-    process.exit(1);
-  }
+  try {
+    // 1. Conectar a la base de datos
+    await AppDataSource.initialize();
+    console.log(' Conexion a base de datos establecida');
+    // 2. Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`\n Servidor corriendo en puerto ${PORT}`);
+      console.log(` Entorno: ${process.env.NODE_ENV || 'development'}`);
+      console.log(` Health check: http://localhost:${PORT}/health`);
+      console.log('\n Endpoints disponibles:');
+      console.log('   POST   /api/v1/auth/registro');
+      console.log('   POST   /api/v1/auth/login');
+      console.log('   POST   /api/v1/auth/refresh-token');
+      console.log('   POST   /api/v1/auth/logout');
+      console.log('   GET    /api/v1/usuarios/perfil        (requiere auth)');
+      console.log('   PUT    /api/v1/usuarios/perfil        (requiere auth)');
+      console.log('   GET    /api/v1/usuarios/progreso      (requiere auth)');
+      
+      console.log('\n 🧠 Endpoints de Quiz:'); // <-- LOG DE QUIZ
+      console.log('   GET    /api/v1/quiz/questions/:subtemaId?limite=N    (auth + 15 RPM)');
+      console.log('   POST   /api/v1/quiz/submit                            (requiere auth)');
+      
+      console.log('\n 🤖 Endpoints de IA (Gemini):');
+      console.log('   POST   /api/v1/gemini/validate-code      (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/generate-questions (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/chat               (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/explicar-concepto  (auth + 15 RPM)');
+      console.log('   POST   /api/v1/gemini/generar-explicacion (auth + 15 RPM)');
+      console.log('   GET    /api/v1/gemini/stats              (monitoreo)');
+      console.log('\n 📝 Endpoints de Retroalimentación:');
+      console.log('   GET    /api/v1/retroalimentacion/:usuario_id (auth)');
+      console.log('   POST   /api/v1/retroalimentacion/generar     (auth + 15 RPM)');
+      console.log('\n Servidor listo para recibir peticiones\n');
+           logAppStart(Number(PORT), process.env.NODE_ENV || 'development');
+    });
+  } catch (error) {
+    console.error(' Error al iniciar servidor:', error);
+    process.exit(1);
+  }
 }
 // Manejo de cierre graceful
 process.on('SIGTERM', async () => {
-  console.log('\n  SIGTERM recibido, cerrando servidor...');
-  logAppShutdown('SIGTERM');
-  await AppDataSource.destroy();
-  process.exit(0);
+  console.log('\n  SIGTERM recibido, cerrando servidor...');
+  logAppShutdown('SIGTERM');
+  await AppDataSource.destroy();
+  process.exit(0);
 });
 process.on('SIGINT', async () => {
-  console.log('\n  SIGINT recibido, cerrando servidor...');
-  logAppShutdown('SIGINT');
-  await AppDataSource.destroy();
-  process.exit(0);
+  console.log('\n  SIGINT recibido, cerrando servidor...');
+  logAppShutdown('SIGINT');
+  await AppDataSource.destroy();
+  process.exit(0);
 });
 // Iniciar
 iniciarServidor();
