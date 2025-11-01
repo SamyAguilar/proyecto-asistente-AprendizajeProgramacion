@@ -13,6 +13,14 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import { createGeminiRoutes } from './routes/gemini.routes';
 import { createRetroalimentacionRoutes } from './routes/retroalimentacion.routes';
+
+//Toño
+import materiasRoutes from "./routes/materias.routes";
+import temasRoutes from "./routes/temas.routes";
+import progresoRoutes from "./routes/progreso.routes";
+import reportesRoutes from "./routes/reportes.routes";
+// 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 // ============================================
@@ -35,6 +43,19 @@ app.use(generalRateLimiter);
 // ============================================
 // RUTAS
 // ============================================
+
+
+
+// Toño
+app.use("/api/v1/materias", materiasRoutes);
+app.use("/api/v1", temasRoutes); // temas routes usan /materias/:id/temas y /temas/:id etc
+app.use("/api/v1", progresoRoutes);
+app.use("/api/v1", reportesRoutes);
+//
+
+
+
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
