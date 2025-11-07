@@ -1,3 +1,5 @@
+// backend/src/controllers/tema.controller.ts
+
 import { Request, Response } from 'express';
 import { TemaService } from '../services/tema.service';
 import { logError } from '../utils/logger';
@@ -29,51 +31,10 @@ export class TemaController {
       res.status(200).json({
         success: true,
         data: temas,
-        total: temas.length,
-        materiaId
+        total: temas.length
       });
     } catch (error: any) {
       logError('Error al listar temas:', error);
-      res.status(500).json({
-        error: 'Error interno al listar temas',
-        mensaje: error.message
-      });
-    }
-  };
-
-  /**
-   * GET /api/v1/materias/:materiaId/temas-con-progreso
-   * Listar temas con progreso del estudiante
-   */
-  listarTemasConProgreso = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const materiaId = parseInt(req.params.materiaId);
-      const usuarioId = (req as any).userId;
-
-      if (isNaN(materiaId)) {
-        res.status(400).json({
-          error: 'ID de materia invalido'
-        });
-        return;
-      }
-
-      if (!usuarioId) {
-        res.status(401).json({
-          error: 'Usuario no autenticado'
-        });
-        return;
-      }
-
-      const temas = await this.temaService.listarTemasConProgreso(materiaId, usuarioId);
-
-      res.status(200).json({
-        success: true,
-        data: temas,
-        total: temas.length,
-        materiaId
-      });
-    } catch (error: any) {
-      logError('Error al listar temas con progreso:', error);
       res.status(500).json({
         error: 'Error interno al listar temas',
         mensaje: error.message
@@ -120,8 +81,47 @@ export class TemaController {
   };
 
   /**
+   * GET /api/v1/materias/:materiaId/temas-con-progreso
+   * Listar temas con progreso del estudiante
+   */
+  listarTemasConProgreso = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const usuarioId = (req as any).userId;
+      const materiaId = parseInt(req.params.materiaId);
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      if (isNaN(materiaId)) {
+        res.status(400).json({
+          error: 'ID de materia invalido'
+        });
+        return;
+      }
+
+      const temas = await this.temaService.listarTemasConProgreso(usuarioId, materiaId);
+
+      res.status(200).json({
+        success: true,
+        data: temas,
+        total: temas.length
+      });
+    } catch (error: any) {
+      logError('Error al listar temas con progreso:', error);
+      res.status(500).json({
+        error: 'Error interno al listar temas con progreso',
+        mensaje: error.message
+      });
+    }
+  };
+
+  /**
    * GET /api/v1/temas/:temaId/subtemas
-   * Listar subtemas de un tema
+   * Listar todos los subtemas de un tema
    */
   listarSubtemasPorTema = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -139,8 +139,7 @@ export class TemaController {
       res.status(200).json({
         success: true,
         data: subtemas,
-        total: subtemas.length,
-        temaId
+        total: subtemas.length
       });
     } catch (error: any) {
       logError('Error al listar subtemas:', error);

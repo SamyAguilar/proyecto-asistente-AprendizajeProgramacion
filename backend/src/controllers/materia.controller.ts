@@ -1,3 +1,5 @@
+// backend/src/controllers/materia.controller.ts
+
 import { Request, Response } from 'express';
 import { MateriaService } from '../services/materia.service';
 import { logError } from '../utils/logger';
@@ -70,6 +72,38 @@ export class MateriaController {
   };
 
   /**
+   * GET /api/v1/materias/buscar?q=texto
+   * Buscar materias por nombre o codigo
+   */
+  buscarMaterias = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const query = req.query.q as string;
+
+      if (!query) {
+        res.status(400).json({
+          error: 'Parametro de busqueda requerido: q'
+        });
+        return;
+      }
+
+      const materias = await this.materiaService.buscarMaterias(query);
+
+      res.status(200).json({
+        success: true,
+        data: materias,
+        total: materias.length,
+        query: query
+      });
+    } catch (error: any) {
+      logError('Error al buscar materias:', error);
+      res.status(500).json({
+        error: 'Error interno al buscar materias',
+        mensaje: error.message
+      });
+    }
+  };
+
+  /**
    * GET /api/v1/materias/mis-materias
    * Listar materias del estudiante autenticado
    */
@@ -92,9 +126,9 @@ export class MateriaController {
         total: materias.length
       });
     } catch (error: any) {
-      logError('Error al listar materias del estudiante:', error);
+      logError('Error al listar mis materias:', error);
       res.status(500).json({
-        error: 'Error interno al listar materias',
+        error: 'Error interno al listar mis materias',
         mensaje: error.message
       });
     }
@@ -123,14 +157,14 @@ export class MateriaController {
         return;
       }
 
-      const resultado = await this.materiaService.matricularEstudiante(usuarioId, materiaId);
+      const resultado = await this.materiaService.matricularEnMateria(usuarioId, materiaId);
 
       res.status(201).json({
         success: true,
-        ...resultado
+        data: resultado
       });
     } catch (error: any) {
-      logError('Error al matricular estudiante:', error);
+      logError('Error al matricular en materia:', error);
 
       if (error.message === 'Materia no encontrada') {
         res.status(404).json({
@@ -141,46 +175,20 @@ export class MateriaController {
 
       if (error.message === 'Ya estas matriculado en esta materia') {
         res.status(409).json({
-          error: error.message
+          error: 'Ya estas matriculado en esta materia'
+        });
+        return;
+      }
+
+      if (error.message === 'No cumples con los prerequisitos para esta materia') {
+        res.status(403).json({
+          error: 'No cumples con los prerequisitos para esta materia'
         });
         return;
       }
 
       res.status(500).json({
         error: 'Error interno al matricular',
-        mensaje: error.message
-      });
-    }
-  };
-
-  /**
-   * GET /api/v1/materias/buscar?q=texto
-   * Buscar materias por nombre o codigo
-   */
-  buscarMaterias = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const query = req.query.q as string;
-
-      if (!query || query.trim().length === 0) {
-        res.status(400).json({
-          error: 'Parametro de busqueda requerido',
-          mensaje: 'Debes proporcionar un parametro "q" para buscar'
-        });
-        return;
-      }
-
-      const materias = await this.materiaService.buscarMaterias(query.trim());
-
-      res.status(200).json({
-        success: true,
-        data: materias,
-        total: materias.length,
-        query: query.trim()
-      });
-    } catch (error: any) {
-      logError('Error al buscar materias:', error);
-      res.status(500).json({
-        error: 'Error interno al buscar materias',
         mensaje: error.message
       });
     }

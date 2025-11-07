@@ -114,8 +114,9 @@ export class ProgresoService {
       }
 
       await this.progresoRepository.save(progresoExistente);
+      
     } else {
-      // Crear nuevo registro - IGUAL que en GenerateQuestionsUseCase.ts y AuthService.ts
+      // Crear nuevo registro
       const nuevoProgreso = this.progresoRepository.create({
         usuarioId: usuarioId,
         temaId: temaId,
@@ -173,7 +174,7 @@ export class ProgresoService {
     const completados = parseInt(stats[0].ejercicios_correctos) + parseInt(stats[0].preguntas_correctas);
 
     if (totalItems === 0) {
-      return; // No hay nada que calcular
+      return;
     }
 
     const porcentaje = Math.round((completados / totalItems) * 100);

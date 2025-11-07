@@ -1,3 +1,5 @@
+// backend/src/routes/progreso.routes.ts
+
 import { Router } from 'express';
 import { ProgresoController } from '../controllers/progreso.controller';
 import { authMiddleware } from '../middleware/authMiddleware';
@@ -6,7 +8,7 @@ const router = Router();
 const progresoController = new ProgresoController();
 
 /**
- * Todas las rutas de progreso requieren autenticacion
+ * TODAS LAS RUTAS REQUIEREN AUTENTICACION
  */
 
 /**
@@ -22,7 +24,7 @@ router.get(
 
 /**
  * @route   GET /api/v1/progreso/tema/:temaId
- * @desc    Obtener progreso del estudiante en un tema especifico
+ * @desc    Obtener progreso en un tema especifico
  * @access  Private (requiere token JWT)
  */
 router.get(
@@ -44,27 +46,15 @@ router.get(
 
 /**
  * @route   PUT /api/v1/progreso/actualizar
- * @desc    Actualizar progreso manualmente
+ * @desc    Actualizar progreso de un estudiante
  * @access  Private (requiere token JWT)
- * @body    {temaId, subtemaId?, estado, porcentajeCompletado?}
+ * @body    { temaId?, subtemaId?, estado, porcentajeCompletado? }
  * @note    IMPORTANTE: Pancho usara este endpoint
  */
 router.put(
   '/actualizar',
   authMiddleware,
   (req, res) => progresoController.actualizarProgreso(req, res)
-);
-
-/**
- * @route   POST /api/v1/progreso/calcular/:temaId
- * @desc    Calcular automaticamente el progreso basado en ejercicios/quizzes
- * @access  Private (requiere token JWT)
- * @note    IMPORTANTE: Pancho puede usar este endpoint
- */
-router.post(
-  '/calcular/:temaId',
-  authMiddleware,
-  (req, res) => progresoController.calcularProgresoTema(req, res)
 );
 
 export default router;

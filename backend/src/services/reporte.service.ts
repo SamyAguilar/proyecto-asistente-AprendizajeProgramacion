@@ -1,3 +1,5 @@
+// backend/src/services/reporte.service.ts
+
 import { AppDataSource } from '../config/database';
 
 export interface ReporteRendimientoDto {
@@ -35,6 +37,17 @@ export interface ReporteActividadDto {
   temasAccedidos: number;
 }
 
+export interface ReporteComparativoDto {
+  usuarioId: number;
+  promedioUsuario: number;
+  promedioGeneral: number;
+  posicionRanking: number;
+  totalEstudiantes: number;
+  percentil: number;
+  materiaMejor: string;
+  materiaPeor: string;
+}
+
 export class ReporteService {
   
   /**
@@ -46,58 +59,46 @@ export class ReporteService {
     fechaInicio?: Date,
     fechaFin?: Date
   ): Promise<ReporteRendimientoDto> {
-    const inicio = fechaInicio || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default: ultimos 30 dias
+    const inicio = fechaInicio || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const fin = fechaFin || new Date();
 
-    // Estadisticas de ejercicios
     const statsEjercicios = await AppDataSource.query(
       `SELECT 
         COUNT(*) as total,
-        SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END) as correctos,
-        SUM(CASE WHEN resultado = 'incorrecto' THEN 1 ELSE 0 END) as incorrectos
+        SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END) as correctos
        FROM intentos_ejercicios
        WHERE usuario_id = $1
-       AND fecha_intento BETWEEN $2 AND $3`,
+       AND timestamp BETWEEN $2 AND $3`,
       [usuarioId, inicio, fin]
     );
 
-    // Estadisticas de quizzes
     const statsQuizzes = await AppDataSource.query(
       `SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN es_correcta = true THEN 1 ELSE 0 END) as correctos
        FROM intentos_quiz
        WHERE usuario_id = $1
-       AND fecha_intento BETWEEN $2 AND $3`,
+       AND timestamp BETWEEN $2 AND $3`,
       [usuarioId, inicio, fin]
     );
 
-    // Materias activas y temas completados
     const statsProgreso = await AppDataSource.query(
       `SELECT 
-        COUNT(DISTINCT mat.materia_id) as materias_activas,
+        COUNT(DISTINCT m.id) as materias_activas,
         COUNT(DISTINCT CASE WHEN p.estado = 'completado' THEN p.tema_id END) as temas_completados
        FROM matriculas mat
-       LEFT JOIN temas t ON t.materia_id = mat.materia_id
-       LEFT JOIN progreso p ON p.tema_id = t.id AND p.usuario_id = mat.usuario_id
+       INNER JOIN materias m ON m.id = mat.materia_id
+       LEFT JOIN temas t ON t.materia_id = m.id
+       LEFT JOIN progreso p ON p.tema_id = t.id AND p.usuario_id = $1
        WHERE mat.usuario_id = $1
        AND mat.estado = 'activa'`,
       [usuarioId]
     );
 
-    // Calcular horas de estudio estimadas
-    const statsActividad = await AppDataSource.query(
-      `SELECT 
-        COUNT(DISTINCT DATE(ie.fecha_intento)) as dias_activos
-       FROM intentos_ejercicios ie
-       WHERE ie.usuario_id = $1
-       AND ie.fecha_intento BETWEEN $2 AND $3`,
-      [usuarioId, inicio, fin]
-    );
-
     const totalEjercicios = parseInt(statsEjercicios[0]?.total || '0');
     const ejerciciosCorrectos = parseInt(statsEjercicios[0]?.correctos || '0');
-    const ejerciciosIncorrectos = parseInt(statsEjercicios[0]?.incorrectos || '0');
+    const ejerciciosIncorrectos = totalEjercicios - ejerciciosCorrectos;
+
     const totalQuizzes = parseInt(statsQuizzes[0]?.total || '0');
     const quizzesCorrectos = parseInt(statsQuizzes[0]?.correctos || '0');
 
@@ -111,7 +112,6 @@ export class ReporteService {
 
     const promedioGeneral = (tasaExito + tasaExitoQuizzes) / 2;
 
-    // Estimar horas: ~5 minutos por ejercicio/quiz
     const horasEstudio = Math.round(((totalEjercicios + totalQuizzes) * 5) / 60 * 10) / 10;
 
     return {
@@ -139,7 +139,6 @@ export class ReporteService {
     usuarioId: number,
     materiaId: number
   ): Promise<ReportePorMateriaDto> {
-    // Obtener nombre de la materia
     const materia = await AppDataSource.query(
       'SELECT nombre FROM materias WHERE id = $1',
       [materiaId]
@@ -149,7 +148,6 @@ export class ReporteService {
       throw new Error('Materia no encontrada');
     }
 
-    // Estadisticas de ejercicios en esta materia
     const statsEjercicios = await AppDataSource.query(
       `SELECT 
         COUNT(*) as total,
@@ -163,7 +161,6 @@ export class ReporteService {
       [usuarioId, materiaId]
     );
 
-    // Estadisticas de temas
     const statsTemas = await AppDataSource.query(
       `SELECT 
         COUNT(DISTINCT t.id) as total_temas,
@@ -174,9 +171,8 @@ export class ReporteService {
       [usuarioId, materiaId]
     );
 
-    // Ultima actividad
     const ultimaActividad = await AppDataSource.query(
-      `SELECT MAX(ie.fecha_intento) as ultima_actividad
+      `SELECT MAX(ie.timestamp) as ultima_actividad
        FROM intentos_ejercicios ie
        INNER JOIN ejercicios e ON e.id = ie.ejercicio_id
        INNER JOIN subtemas s ON s.id = e.subtema_id
@@ -224,39 +220,47 @@ export class ReporteService {
 
     const actividad = await AppDataSource.query(
       `SELECT 
-        DATE(ie.fecha_intento) as fecha,
-        COUNT(DISTINCT ie.id) as ejercicios,
+        DATE(timestamp) as fecha,
+        COUNT(DISTINCT id) as ejercicios,
         0 as quizzes,
-        COUNT(DISTINCT t.id) as temas
-       FROM intentos_ejercicios ie
-       INNER JOIN ejercicios e ON e.id = ie.ejercicio_id
-       INNER JOIN subtemas s ON s.id = e.subtema_id
-       INNER JOIN temas t ON t.id = s.tema_id
-       WHERE ie.usuario_id = $1
-       AND ie.fecha_intento >= $2
-       GROUP BY DATE(ie.fecha_intento)
+        0 as temas
+       FROM intentos_ejercicios
+       WHERE usuario_id = $1
+       AND timestamp >= $2
+       GROUP BY DATE(timestamp)
        
        UNION ALL
        
        SELECT 
-        DATE(iq.fecha_intento) as fecha,
+        DATE(timestamp) as fecha,
         0 as ejercicios,
-        COUNT(DISTINCT iq.id) as quizzes,
+        COUNT(DISTINCT id) as quizzes,
         0 as temas
-       FROM intentos_quiz iq
-       WHERE iq.usuario_id = $1
-       AND iq.fecha_intento >= $2
-       GROUP BY DATE(iq.fecha_intento)
+       FROM intentos_quiz
+       WHERE usuario_id = $1
+       AND timestamp >= $2
+       GROUP BY DATE(timestamp)
+       
+       UNION ALL
+       
+       SELECT 
+        DATE(fecha_ultimo_acceso) as fecha,
+        0 as ejercicios,
+        0 as quizzes,
+        COUNT(DISTINCT tema_id) as temas
+       FROM progreso
+       WHERE usuario_id = $1
+       AND fecha_ultimo_acceso >= $2
+       GROUP BY DATE(fecha_ultimo_acceso)
        
        ORDER BY fecha DESC`,
       [usuarioId, fechaInicio]
     );
 
-    // Agrupar por fecha
     const actividadAgrupada = new Map<string, ReporteActividadDto>();
 
     actividad.forEach((a: any) => {
-      const fechaStr = a.fecha.toISOString().split('T')[0];
+      const fechaStr = new Date(a.fecha).toISOString().split('T')[0];
       
       if (!actividadAgrupada.has(fechaStr)) {
         actividadAgrupada.set(fechaStr, {
@@ -268,61 +272,121 @@ export class ReporteService {
       }
 
       const registro = actividadAgrupada.get(fechaStr)!;
-      registro.ejerciciosRealizados += parseInt(a.ejercicios || '0');
-      registro.quizzesRealizados += parseInt(a.quizzes || '0');
-      registro.temasAccedidos += parseInt(a.temas || '0');
+      registro.ejerciciosRealizados += parseInt(a.ejercicios) || 0;
+      registro.quizzesRealizados += parseInt(a.quizzes) || 0;
+      registro.temasAccedidos += parseInt(a.temas) || 0;
     });
 
-    return Array.from(actividadAgrupada.values());
+    return Array.from(actividadAgrupada.values()).sort((a, b) => 
+      b.fecha.localeCompare(a.fecha)
+    );
   }
 
   /**
    * Generar reporte comparativo con otros estudiantes
    * Endpoint: GET /api/v1/reportes/comparativo
    */
-  async generarReporteComparativo(usuarioId: number): Promise<any> {
-    // Rendimiento del estudiante
-    const miRendimiento = await AppDataSource.query(
+  async generarReporteComparativo(usuarioId: number): Promise<ReporteComparativoDto> {
+    const statsUsuario = await AppDataSource.query(
       `SELECT 
-        COUNT(*) as total_intentos,
-        SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END) as correctos
-       FROM intentos_ejercicios
-       WHERE usuario_id = $1`,
+        COUNT(DISTINCT ie.id) as total_intentos,
+        SUM(CASE WHEN ie.resultado = 'correcto' THEN 1 ELSE 0 END) as correctos
+       FROM intentos_ejercicios ie
+       WHERE ie.usuario_id = $1`,
       [usuarioId]
     );
 
-    // Promedio general de todos los estudiantes
-    const promedioGeneral = await AppDataSource.query(
+    const totalIntentos = parseInt(statsUsuario[0]?.total_intentos || '0');
+    const correctos = parseInt(statsUsuario[0]?.correctos || '0');
+    const promedioUsuario = totalIntentos > 0 
+      ? Math.round((correctos / totalIntentos) * 100) 
+      : 0;
+
+    const statsGeneral = await AppDataSource.query(
       `SELECT 
-        AVG(tasa_exito) as promedio
+        AVG(CASE 
+          WHEN total_intentos > 0 
+          THEN (correctos::float / total_intentos::float) * 100 
+          ELSE 0 
+        END) as promedio_general,
+        COUNT(DISTINCT usuario_id) as total_estudiantes
        FROM (
          SELECT 
            usuario_id,
-           CASE 
-             WHEN COUNT(*) > 0 THEN (SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END)::float / COUNT(*)) * 100
-             ELSE 0
-           END as tasa_exito
+           COUNT(*) as total_intentos,
+           SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END) as correctos
          FROM intentos_ejercicios
          GROUP BY usuario_id
-       ) as tasas`
+       ) sub`
     );
 
-    const miTotal = parseInt(miRendimiento[0]?.total_intentos || '0');
-    const miCorrectos = parseInt(miRendimiento[0]?.correctos || '0');
-    const miTasa = miTotal > 0 ? Math.round((miCorrectos / miTotal) * 100) : 0;
-    const tasaPromedio = parseFloat(promedioGeneral[0]?.promedio || '0');
+    const promedioGeneral = Math.round(parseFloat(statsGeneral[0]?.promedio_general || '0'));
+    const totalEstudiantes = parseInt(statsGeneral[0]?.total_estudiantes || '0');
+
+    const ranking = await AppDataSource.query(
+      `SELECT 
+        usuario_id,
+        RANK() OVER (ORDER BY (correctos::float / NULLIF(total_intentos, 0)::float) DESC) as posicion
+       FROM (
+         SELECT 
+           usuario_id,
+           COUNT(*) as total_intentos,
+           SUM(CASE WHEN resultado = 'correcto' THEN 1 ELSE 0 END) as correctos
+         FROM intentos_ejercicios
+         GROUP BY usuario_id
+       ) sub`
+    );
+
+    const miPosicion = ranking.find((r: any) => r.usuario_id === usuarioId);
+    const posicionRanking = miPosicion ? parseInt(miPosicion.posicion) : totalEstudiantes;
+
+    const percentil = totalEstudiantes > 0 
+      ? Math.round((1 - (posicionRanking / totalEstudiantes)) * 100) 
+      : 0;
+
+    const mejorMateria = await AppDataSource.query(
+      `SELECT 
+        m.nombre,
+        (SUM(CASE WHEN ie.resultado = 'correcto' THEN 1 ELSE 0 END)::float / COUNT(*)::float) * 100 as tasa
+       FROM intentos_ejercicios ie
+       INNER JOIN ejercicios e ON e.id = ie.ejercicio_id
+       INNER JOIN subtemas s ON s.id = e.subtema_id
+       INNER JOIN temas t ON t.id = s.tema_id
+       INNER JOIN materias m ON m.id = t.materia_id
+       WHERE ie.usuario_id = $1
+       GROUP BY m.id, m.nombre
+       HAVING COUNT(*) >= 3
+       ORDER BY tasa DESC
+       LIMIT 1`,
+      [usuarioId]
+    );
+
+    const peorMateria = await AppDataSource.query(
+      `SELECT 
+        m.nombre,
+        (SUM(CASE WHEN ie.resultado = 'correcto' THEN 1 ELSE 0 END)::float / COUNT(*)::float) * 100 as tasa
+       FROM intentos_ejercicios ie
+       INNER JOIN ejercicios e ON e.id = ie.ejercicio_id
+       INNER JOIN subtemas s ON s.id = e.subtema_id
+       INNER JOIN temas t ON t.id = s.tema_id
+       INNER JOIN materias m ON m.id = t.materia_id
+       WHERE ie.usuario_id = $1
+       GROUP BY m.id, m.nombre
+       HAVING COUNT(*) >= 3
+       ORDER BY tasa ASC
+       LIMIT 1`,
+      [usuarioId]
+    );
 
     return {
-      miRendimiento: {
-        totalIntentos: miTotal,
-        intentosCorrectos: miCorrectos,
-        tasaExito: miTasa
-      },
-      promedioGeneral: Math.round(tasaPromedio * 100) / 100,
-      diferencia: Math.round((miTasa - tasaPromedio) * 100) / 100,
-      posicion: miTasa > tasaPromedio ? 'Por encima del promedio' : 
-                miTasa < tasaPromedio ? 'Por debajo del promedio' : 
-                'En el promedio'
+      usuarioId,
+      promedioUsuario,
+      promedioGeneral,
+      posicionRanking,
+      totalEstudiantes,
+      percentil,
+      materiaMejor: mejorMateria[0]?.nombre || 'N/A',
+      materiaPeor: peorMateria[0]?.nombre || 'N/A'
     };
   }
 }

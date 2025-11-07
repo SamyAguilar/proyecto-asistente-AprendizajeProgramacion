@@ -1,6 +1,7 @@
 import { AppDataSource } from '../config/database';
 import { Tema } from '../models/Tema';
 import { Subtema } from '../models/Subtema';
+import { Progreso } from '../models/Progreso';
 import { Repository } from 'typeorm';
 
 export interface TemaDto {
@@ -34,10 +35,12 @@ export interface TemaConProgresoDto extends TemaDto {
 export class TemaService {
   private temaRepository: Repository<Tema>;
   private subtemaRepository: Repository<Subtema>;
+  private progresoRepository: Repository<Progreso>;
 
   constructor() {
     this.temaRepository = AppDataSource.getRepository(Tema);
     this.subtemaRepository = AppDataSource.getRepository(Subtema);
+    this.progresoRepository = AppDataSource.getRepository(Progreso);
   }
 
   /**
@@ -66,48 +69,7 @@ export class TemaService {
   }
 
   /**
-   * Listar temas de una materia con progreso del estudiante
-   * Endpoint: GET /api/v1/materias/:materiaId/temas-con-progreso
-   */
-  async listarTemasConProgreso(materiaId: number, usuarioId: number): Promise<TemaConProgresoDto[]> {
-    const query = `
-      SELECT 
-        t.id,
-        t.materia_id,
-        t.nombre,
-        t.descripcion,
-        t.contenido,
-        t.orden,
-        t.fecha_creacion,
-        COUNT(DISTINCT s.id) as total_subtemas,
-        COALESCE(p.estado, 'no_iniciado') as estado_progreso,
-        COALESCE(p.porcentaje_completado, 0) as porcentaje_completado
-      FROM temas t
-      LEFT JOIN subtemas s ON s.tema_id = t.id
-      LEFT JOIN progreso p ON p.tema_id = t.id AND p.usuario_id = $2
-      WHERE t.materia_id = $1
-      GROUP BY t.id, t.materia_id, t.nombre, t.descripcion, t.contenido, t.orden, t.fecha_creacion, p.estado, p.porcentaje_completado
-      ORDER BY t.orden ASC, t.nombre ASC
-    `;
-
-    const temas = await AppDataSource.query(query, [materiaId, usuarioId]);
-
-    return temas.map((t: any) => ({
-      id: t.id,
-      materiaId: t.materia_id,
-      nombre: t.nombre,
-      descripcion: t.descripcion || '',
-      contenido: t.contenido || '',
-      orden: t.orden || 0,
-      totalSubtemas: parseInt(t.total_subtemas) || 0,
-      fechaCreacion: t.fecha_creacion,
-      estadoProgreso: t.estado_progreso,
-      porcentajeCompletado: parseInt(t.porcentaje_completado) || 0
-    }));
-  }
-
-  /**
-   * Obtener detalle de un tema especifico
+   * Obtener un tema especifico por ID
    * Endpoint: GET /api/v1/temas/:id
    */
   async obtenerTemaPorId(temaId: number): Promise<TemaDto> {
@@ -134,7 +96,43 @@ export class TemaService {
   }
 
   /**
-   * Listar subtemas de un tema
+   * Listar temas de una materia con progreso del estudiante
+   * Endpoint: GET /api/v1/materias/:materiaId/temas-con-progreso
+   */
+  async listarTemasConProgreso(usuarioId: number, materiaId: number): Promise<TemaConProgresoDto[]> {
+    const temas = await this.temaRepository
+      .createQueryBuilder('tema')
+      .leftJoinAndSelect('tema.subtemas', 'subtema')
+      .leftJoinAndSelect(
+        'tema.progresos',
+        'progreso',
+        'progreso.usuarioId = :usuarioId',
+        { usuarioId }
+      )
+      .where('tema.materiaId = :materiaId', { materiaId })
+      .orderBy('tema.orden', 'ASC')
+      .getMany();
+
+    return temas.map(tema => {
+      const progreso = tema.progresos && tema.progresos.length > 0 ? tema.progresos[0] : null;
+
+      return {
+        id: tema.id,
+        materiaId: tema.materiaId,
+        nombre: tema.nombre,
+        descripcion: tema.descripcion || '',
+        contenido: tema.contenido || '',
+        orden: tema.orden || 0,
+        totalSubtemas: tema.subtemas?.length || 0,
+        fechaCreacion: tema.fechaCreacion,
+        estadoProgreso: progreso?.estado || 'no_iniciado',
+        porcentajeCompletado: progreso?.porcentajeCompletado || 0
+      };
+    });
+  }
+
+  /**
+   * Listar todos los subtemas de un tema
    * Endpoint: GET /api/v1/temas/:temaId/subtemas
    */
   async listarSubtemasPorTema(temaId: number): Promise<SubtemaDto[]> {
@@ -161,7 +159,7 @@ export class TemaService {
   }
 
   /**
-   * Obtener detalle de un subtema especifico
+   * Obtener un subtema especifico por ID
    * Endpoint: GET /api/v1/subtemas/:id
    */
   async obtenerSubtemaPorId(subtemaId: number): Promise<SubtemaDto> {

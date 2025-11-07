@@ -80,7 +80,7 @@ app.use('/api/v1/retroalimentacion', createRetroalimentacionRoutes());
 app.use('/api/v1/materias', materiaRoutes);
 
 // Rutas de Temas y Subtemas
-app.use('/api/v1/temas', temaRoutes);
+app.use('/api/v1', temaRoutes);
 
 // Rutas de Progreso
 app.use('/api/v1/progreso', progresoRoutes);

@@ -24,16 +24,27 @@ export class ReporteController {
         return;
       }
 
-      // Parsear fechas opcionales
       let fechaInicio: Date | undefined;
       let fechaFin: Date | undefined;
 
       if (req.query.fechaInicio) {
         fechaInicio = new Date(req.query.fechaInicio as string);
+        if (isNaN(fechaInicio.getTime())) {
+          res.status(400).json({
+            error: 'Fecha de inicio invalida'
+          });
+          return;
+        }
       }
 
       if (req.query.fechaFin) {
         fechaFin = new Date(req.query.fechaFin as string);
+        if (isNaN(fechaFin.getTime())) {
+          res.status(400).json({
+            error: 'Fecha de fin invalida'
+          });
+          return;
+        }
       }
 
       const reporte = await this.reporteService.generarReporteRendimiento(
@@ -116,7 +127,6 @@ export class ReporteController {
         return;
       }
 
-      // Numero de dias (default: 7)
       const dias = req.query.dias ? parseInt(req.query.dias as string) : 7;
 
       if (isNaN(dias) || dias < 1 || dias > 90) {
