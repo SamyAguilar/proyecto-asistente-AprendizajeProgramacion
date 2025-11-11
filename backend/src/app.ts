@@ -1,4 +1,4 @@
-// src/app.ts
+// backend/src/app.ts
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
@@ -15,11 +15,15 @@ import userRoutes from './routes/user.routes';
 import { createGeminiRoutes } from './routes/gemini.routes';
 import { createRetroalimentacionRoutes } from './routes/retroalimentacion.routes';
 
-// NUEVAS RUTAS DE TONO
+// RUTAS DE TONO (Francisco)
 import materiaRoutes from './routes/materia.routes';
 import temaRoutes from './routes/tema.routes';
 import progresoRoutes from './routes/progreso.routes';
 import reporteRoutes from './routes/reporte.routes';
+
+// RUTAS DE PANCHO (Francisco)
+import ejercicioRoutes from './routes/ejercicio.routes';
+import quizRoutes from './routes/quiz.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -89,10 +93,14 @@ app.use('/api/v1/progreso', progresoRoutes);
 app.use('/api/v1/reportes', reporteRoutes);
 
 // ============================================
-// TODO: RUTAS DE PANCHO (Francisco)
+// RUTAS DE PANCHO (Francisco)
 // ============================================
-// app.use('/api/v1/ejercicios', ejerciciosRoutes);
-// app.use('/api/v1/quiz', quizRoutes);
+
+// Rutas de Ejercicios
+app.use('/api/v1/ejercicios', ejercicioRoutes);
+
+// Rutas de Quizzes
+app.use('/api/v1/quiz', quizRoutes);
 
 // ============================================
 // MANEJO DE ERRORES
@@ -148,19 +156,33 @@ async function iniciarServidor() {
       console.log('   POST   /api/v1/materias/:id/matricular   (auth)');
       console.log('   GET    /api/v1/temas/:id                 (detalle tema)');
       console.log('   GET    /api/v1/temas/:temaId/subtemas    (listar subtemas)');
+      console.log('   GET    /api/v1/subtemas/:id              (detalle subtema)');
+      console.log('   GET    /api/v1/materias/:materiaId/temas (listar temas)');
+      console.log('   GET    /api/v1/materias/:materiaId/temas-con-progreso (auth)');
       
       console.log('\n📈 Endpoints de Progreso (Tono):');
       console.log('   GET    /api/v1/progreso/mi-progreso      (auth)');
       console.log('   GET    /api/v1/progreso/tema/:temaId     (auth)');
       console.log('   GET    /api/v1/progreso/materia/:materiaId (auth)');
       console.log('   PUT    /api/v1/progreso/actualizar       (auth) ← PANCHO USA ESTE');
-      console.log('   POST   /api/v1/progreso/calcular/:temaId (auth) ← PANCHO USA ESTE');
       
       console.log('\n📊 Endpoints de Reportes (Tono):');
       console.log('   GET    /api/v1/reportes/rendimiento      (auth)');
       console.log('   GET    /api/v1/reportes/por-materia/:id  (auth)');
       console.log('   GET    /api/v1/reportes/actividad        (auth)');
       console.log('   GET    /api/v1/reportes/comparativo      (auth)');
+      
+      console.log('\n📝 Endpoints de Ejercicios (Pancho):');
+      console.log('   GET    /api/v1/ejercicios/subtema/:id    (auth)');
+      console.log('   GET    /api/v1/ejercicios/:id            (auth)');
+      console.log('   POST   /api/v1/ejercicios/:id/enviar     (auth) ← USA LULU + TONO');
+      console.log('   GET    /api/v1/ejercicios/:id/intentos   (auth)');
+      
+      console.log('\n❓ Endpoints de Quizzes (Pancho):');
+      console.log('   GET    /api/v1/quiz/subtema/:id/preguntas     (auth) ← USA LULU');
+      console.log('   POST   /api/v1/quiz/responder                  (auth) ← USA TONO');
+      console.log('   GET    /api/v1/quiz/resultados/:usuario_id    (auth)');
+      console.log('   POST   /api/v1/quiz/generar-preguntas         (auth) ← USA LULU');
       
       console.log('\n✅ Servidor listo para recibir peticiones\n');
       
