@@ -25,6 +25,12 @@ import reporteRoutes from './routes/reporte.routes';
 import ejercicioRoutes from './routes/ejercicio.routes';
 import quizRoutes from './routes/quiz.routes';
 
+// RUTAS DE ADMINISTRACIÓN
+import materiaAdminRoutes from './routes/materia-admin.routes';
+import temaAdminRoutes from './routes/tema-admin.routes';
+import subtemaAdminRoutes from './routes/subtema-admin.routes';
+import ejercicioAdminRoutes from './routes/ejercicio-admin.routes';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -101,6 +107,22 @@ app.use('/api/v1/ejercicios', ejercicioRoutes);
 
 // Rutas de Quizzes
 app.use('/api/v1/quiz', quizRoutes);
+
+// ============================================
+// RUTAS DE ADMINISTRACIÓN
+// ============================================
+
+// Rutas de administración de Materias (requiere auth + rol admin/profesor)
+app.use('/api/v1/admin/materias', materiaAdminRoutes);
+
+// Rutas de administración de Temas (requiere auth + rol admin/profesor)
+app.use('/api/v1/admin/temas', temaAdminRoutes);
+
+// Rutas de administración de Subtemas (requiere auth + rol admin/profesor)
+app.use('/api/v1/admin/subtemas', subtemaAdminRoutes);
+
+// Rutas de administración de Ejercicios (requiere auth + rol admin/profesor)
+app.use('/api/v1/admin/ejercicios', ejercicioAdminRoutes);
 
 // ============================================
 // MANEJO DE ERRORES
@@ -183,6 +205,20 @@ async function iniciarServidor() {
       console.log('   POST   /api/v1/quiz/responder                  (auth) ← USA TONO');
       console.log('   GET    /api/v1/quiz/resultados/:usuario_id    (auth)');
       console.log('   POST   /api/v1/quiz/generar-preguntas         (auth) ← USA LULU');
+      
+      console.log('\n🔧 Endpoints de ADMINISTRACIÓN (Admin/Profesor):');
+      console.log('   POST   /api/v1/admin/materias             (auth + admin/profesor)');
+      console.log('   PUT    /api/v1/admin/materias/:id         (auth + admin/profesor)');
+      console.log('   DELETE /api/v1/admin/materias/:id         (auth + admin)');
+      console.log('   POST   /api/v1/admin/temas                (auth + admin/profesor)');
+      console.log('   PUT    /api/v1/admin/temas/:id            (auth + admin/profesor)');
+      console.log('   DELETE /api/v1/admin/temas/:id            (auth + admin)');
+      console.log('   POST   /api/v1/admin/subtemas             (auth + admin/profesor)');
+      console.log('   PUT    /api/v1/admin/subtemas/:id         (auth + admin/profesor)');
+      console.log('   DELETE /api/v1/admin/subtemas/:id         (auth + admin)');
+      console.log('   POST   /api/v1/admin/ejercicios           (auth + admin/profesor)');
+      console.log('   PUT    /api/v1/admin/ejercicios/:id       (auth + admin/profesor)');
+      console.log('   DELETE /api/v1/admin/ejercicios/:id       (auth + admin)');
       
       console.log('\n✅ Servidor listo para recibir peticiones\n');
       

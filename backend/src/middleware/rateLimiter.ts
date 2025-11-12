@@ -45,8 +45,9 @@ export const generalRateLimiter = rateLimit({
  * Previene ataques de fuerza bruta en login
  */
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos por ventana
+  //windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 0, // 15 minutos
+  max: 55, // 5 intentos por ventana
   message: {
     error: 'Demasiados intentos de inicio de sesión',
     message: 'Has excedido el límite de intentos de inicio de sesión. Por favor, intenta en 15 minutos.',
