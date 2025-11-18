@@ -25,17 +25,26 @@ import type { Ejercicio } from '../../types/materia.types';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 
+// Funciones helper para normalizar textos
+const normalizarTipo = (tipo: string): string => {
+  if (tipo === 'codificacion' || tipo === 'codificación') return 'Codificacion';
+  if (tipo === 'multiple' || tipo === 'múltiple') return 'Multiple';
+  if (tipo === 'completar') return 'Completar';
+  return tipo;
+};
+
+const normalizarDificultad = (dificultad: string): string => {
+  if (dificultad === 'basica' || dificultad === 'básica') return 'Basica';
+  if (dificultad === 'intermedia') return 'Intermedia';
+  if (dificultad === 'avanzada') return 'Avanzada';
+  return dificultad;
+};
+
 const getDificultadColor = (dificultad: string) => {
-  switch (dificultad) {
-    case 'básica':
-      return 'success';
-    case 'intermedia':
-      return 'warning';
-    case 'avanzada':
-      return 'error';
-    default:
-      return 'default';
-  }
+  if (dificultad === 'basica' || dificultad === 'básica') return 'success';
+  if (dificultad === 'intermedia') return 'warning';
+  if (dificultad === 'avanzada') return 'error';
+  return 'default';
 };
 
 export const EjerciciosList = () => {
@@ -55,6 +64,7 @@ export const EjerciciosList = () => {
     try {
       setLoading(true);
       const data = await ejerciciosApi.getBySubtema(Number(subtemaId));
+      console.log('Ejercicios cargados:', data); // DEBUG
       setEjercicios(data);
     } catch (error: any) {
       toast.error('Error al cargar ejercicios');
@@ -98,7 +108,7 @@ export const EjerciciosList = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h4" component="h1">
-            Gestión de Ejercicios
+            Gestion de Ejercicios
           </Typography>
         </Box>
         <Button
@@ -142,14 +152,14 @@ export const EjerciciosList = () => {
                   </TableCell>
                   <TableCell>
                     <Chip 
-                      label={ejercicio.tipoEjercicio.replace('_', ' ')} 
+                      label={normalizarTipo(ejercicio.tipoEjercicio)} 
                       size="small" 
                       variant="outlined"
                     />
                   </TableCell>
                   <TableCell>
                     <Chip 
-                      label={ejercicio.dificultad} 
+                      label={normalizarDificultad(ejercicio.dificultad)} 
                       size="small" 
                       color={getDificultadColor(ejercicio.dificultad)}
                     />
@@ -179,18 +189,18 @@ export const EjerciciosList = () => {
         </Table>
       </TableContainer>
 
-      {/* Dialog de confirmación de eliminación */}
+      {/* Dialog de confirmacion */}
       <Dialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, ejercicio: null })}
       >
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirmar Eliminacion</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Estás seguro de que deseas eliminar este ejercicio?
+            Estas seguro de que deseas eliminar este ejercicio?
           </Typography>
           <Typography variant="caption" color="error" sx={{ mt: 2, display: 'block' }}>
-            Esta acción no se puede deshacer.
+            Esta accion no se puede deshacer.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -205,3 +215,5 @@ export const EjerciciosList = () => {
     </Box>
   );
 };
+
+export default EjerciciosList;

@@ -1,8 +1,9 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { Toaster } from 'react-hot-toast';
+import { theme } from './theme/theme';
 
 // Auth Pages
 import { Login } from './pages/auth/Login';
@@ -25,18 +26,6 @@ import { SubtemaForm } from './pages/subtemas/SubtemaForm';
 // Ejercicios
 import { EjerciciosList } from './pages/ejercicios/EjerciciosList';
 import { EjercicioForm } from './pages/ejercicios/EjercicioForm';
-
-// Theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -99,26 +88,43 @@ function App() {
         </Routes>
       </BrowserRouter>
       
-      {/* Toast notifications */}
+      {/* Toast notifications with custom styles */}
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#363636',
+            borderRadius: '8px',
+            background: '#1e293b',
             color: '#fff',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            padding: '12px 16px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#4caf50',
+              primary: '#10b981',
               secondary: '#fff',
+            },
+            style: {
+              background: '#059669',
             },
           },
           error: {
             duration: 4000,
             iconTheme: {
-              primary: '#f44336',
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+            style: {
+              background: '#dc2626',
+            },
+          },
+          loading: {
+            iconTheme: {
+              primary: '#3b82f6',
               secondary: '#fff',
             },
           },

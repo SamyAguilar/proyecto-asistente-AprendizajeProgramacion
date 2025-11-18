@@ -165,9 +165,9 @@ export const EjercicioForm = () => {
                 required
                 sx={{ flex: 1 }}
               >
-                <MenuItem value="codificación">Código Abierto</MenuItem>
-                <MenuItem value="múltiple">Opción Múltiple</MenuItem>
-                <MenuItem value="completar">Llenar Blancos</MenuItem>
+                <MenuItem value="codificación">Codificación</MenuItem>
+                <MenuItem value="múltiple">Múltiple</MenuItem>
+                <MenuItem value="completar">Completar</MenuItem>
               </TextField>
 
               <TextField
