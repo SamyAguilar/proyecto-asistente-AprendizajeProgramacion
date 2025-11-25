@@ -56,15 +56,20 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    // Detectar modo oscuro
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimaryColor = isDark ? AppTheme.textPrimaryColorDark : AppTheme.textPrimaryColor;
+    final textSecondaryColor = isDark ? AppTheme.textSecondaryColorDark : AppTheme.textSecondaryColor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppTheme.textPrimaryColor,
+            color: textPrimaryColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -81,31 +86,34 @@ class _CustomTextFieldState extends State<CustomTextField> {
           textInputAction: widget.textInputAction,
           focusNode: widget.focusNode,
           autofocus: widget.autofocus,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: AppTheme.textPrimaryColor,
+            color: textPrimaryColor,
           ),
           decoration: InputDecoration(
             hintText: widget.hint,
+            hintStyle: TextStyle(
+              color: textSecondaryColor,
+            ),
             prefixIcon: widget.prefixIcon != null
                 ? Icon(
-                    widget.prefixIcon,
-                    color: AppTheme.textSecondaryColor,
-                    size: 22,
-                  )
+              widget.prefixIcon,
+              color: textSecondaryColor,
+              size: 22,
+            )
                 : null,
             suffixIcon: widget.obscureText
                 ? IconButton(
-                    icon: Icon(
-                      _obscureText ? Icons.visibility_off : Icons.visibility,
-                      color: AppTheme.textSecondaryColor,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureText = !_obscureText;
-                      });
-                    },
-                  )
+              icon: Icon(
+                _obscureText ? Icons.visibility_off : Icons.visibility,
+                color: textSecondaryColor,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            )
                 : widget.suffixIcon,
           ),
         ),
@@ -122,6 +130,7 @@ class EmailTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
 
@@ -130,6 +139,7 @@ class EmailTextField extends StatelessWidget {
     this.controller,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
     this.textInputAction,
     this.focusNode,
   });
@@ -145,6 +155,7 @@ class EmailTextField extends StatelessWidget {
       textInputAction: textInputAction ?? TextInputAction.next,
       focusNode: focusNode,
       onChanged: onChanged,
+      onSubmitted: onSubmitted,
       validator: validator ?? (value) {
         if (value == null || value.isEmpty) {
           return 'El correo es requerido';
@@ -162,12 +173,13 @@ class EmailTextField extends StatelessWidget {
 // CAMPO DE PASSWORD
 // ============================================
 
-class PasswordTextField extends StatelessWidget {
+class PasswordTextField extends StatefulWidget {
   final TextEditingController? controller;
   final String? label;
   final String? hint;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
 
@@ -178,30 +190,83 @@ class PasswordTextField extends StatelessWidget {
     this.hint,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
     this.textInputAction,
     this.focusNode,
   });
 
   @override
+  State<PasswordTextField> createState() => _PasswordTextFieldState();
+}
+
+class _PasswordTextFieldState extends State<PasswordTextField> {
+  bool _obscureText = true;
+
+  @override
   Widget build(BuildContext context) {
-    return CustomTextField(
-      label: label ?? 'Contrasena',
-      hint: hint ?? 'Ingresa tu contrasena',
-      controller: controller,
-      obscureText: true,
-      prefixIcon: Icons.lock_outline,
-      textInputAction: textInputAction ?? TextInputAction.done,
-      focusNode: focusNode,
-      onChanged: onChanged,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'La contrasena es requerida';
-        }
-        if (value.length < 6) {
-          return 'La contrasena debe tener al menos 6 caracteres';
-        }
-        return null;
-      },
+    // Detectar modo oscuro
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimaryColor = isDark ? AppTheme.textPrimaryColorDark : AppTheme.textPrimaryColor;
+    final textSecondaryColor = isDark ? AppTheme.textSecondaryColorDark : AppTheme.textSecondaryColor;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.label != null) ...[
+          Text(
+            widget.label!,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: textPrimaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        TextFormField(
+          controller: widget.controller,
+          obscureText: _obscureText,
+          focusNode: widget.focusNode,
+          textInputAction: widget.textInputAction ?? TextInputAction.done,
+          onChanged: widget.onChanged,
+          onFieldSubmitted: widget.onSubmitted,
+          style: TextStyle(
+            fontSize: 16,
+            color: textPrimaryColor,
+          ),
+          validator: widget.validator ?? (value) {
+            if (value == null || value.isEmpty) {
+              return 'La contrasena es requerida';
+            }
+            if (value.length < 6) {
+              return 'La contrasena debe tener al menos 6 caracteres';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: widget.hint ?? 'Ingresa tu contrasena',
+            hintStyle: TextStyle(
+              color: textSecondaryColor,
+            ),
+            prefixIcon: Icon(
+              Icons.lock_outline,
+              color: textSecondaryColor,
+              size: 22,
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility_off : Icons.visibility,
+                color: textSecondaryColor,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

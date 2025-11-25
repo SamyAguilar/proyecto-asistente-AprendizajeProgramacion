@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   UsuarioModel? _usuario;
   String? _error;
   bool _isLoading = false;
+  String? _lastEmail;
 
   // ============================================
   // GETTERS
@@ -31,6 +32,7 @@ class AuthProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
+  String? get lastEmail => _lastEmail;
 
   // ============================================
   // INICIALIZACION
@@ -38,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> init() async {
     await _storageService.init();
+    _lastEmail = _storageService.getString('last_email');
   }
 
   // ============================================
@@ -57,7 +60,6 @@ class AuthProvider extends ChangeNotifier {
         return;
       }
 
-      // Intentar obtener perfil del usuario
       await loadUserProfile();
 
       if (_usuario != null) {
@@ -72,6 +74,16 @@ class AuthProvider extends ChangeNotifier {
     }
 
     _setLoading(false);
+  }
+
+  // ============================================
+  // GUARDAR ULTIMO EMAIL
+  // ============================================
+
+  Future<void> saveLastEmail(String email) async {
+    _lastEmail = email.trim().toLowerCase();
+    await _storageService.saveString('last_email', _lastEmail!);
+    notifyListeners();
   }
 
   // ============================================
@@ -92,16 +104,19 @@ class AuthProvider extends ChangeNotifier {
       final response = await _httpService.post(
         AppConstants.registerUrl,
         data: {
-          'email': email,
+          'email': email.trim().toLowerCase(),
           'contraseña': password,
-          'nombre': nombre,
-          'apellido': apellido,
-          if (matricula != null && matricula.isNotEmpty) 'matricula': matricula,
+          'nombre': nombre.trim(),
+          'apellido': apellido.trim(),
+          if (matricula != null && matricula.trim().isNotEmpty)
+            'matricula': matricula.trim(),
         },
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data;
+
+        await saveLastEmail(email);
 
         if (data['accessToken'] != null && data['refreshToken'] != null) {
           await _storageService.saveTokens(
@@ -116,16 +131,19 @@ class AuthProvider extends ChangeNotifier {
           }
 
           _status = AuthStatus.authenticated;
-          _setLoading(false);
-          return true;
         }
+
+        _setLoading(false);
+        return true;
       }
 
       _setError('Error al registrar usuario');
       _setLoading(false);
       return false;
     } on HttpException catch (e) {
-      _setError(e.message);
+      // Mensajes de error especificos para registro
+      String errorMessage = _getRegisterErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       return false;
     } catch (e) {
@@ -150,7 +168,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _httpService.post(
         AppConstants.loginUrl,
         data: {
-          'email': email,
+          'email': email.trim().toLowerCase(),
           'contraseña': password,
         },
       );
@@ -163,6 +181,8 @@ class AuthProvider extends ChangeNotifier {
             accessToken: data['accessToken'],
             refreshToken: data['refreshToken'],
           );
+
+          await saveLastEmail(email);
 
           if (data['usuario'] != null) {
             _usuario = UsuarioModel.fromJson(data['usuario']);
@@ -178,11 +198,13 @@ class AuthProvider extends ChangeNotifier {
         }
       }
 
-      _setError('Credenciales invalidas');
+      _setError('Correo o contrasena incorrectos');
       _setLoading(false);
       return false;
     } on HttpException catch (e) {
-      _setError(e.message);
+      // Mensajes de error especificos para login
+      String errorMessage = _getLoginErrorMessage(e);
+      _setError(errorMessage);
       _setLoading(false);
       return false;
     } catch (e) {
@@ -228,13 +250,13 @@ class AuthProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         if (data['data'] != null) {
           _usuario = UsuarioModel.fromJson(data['data']);
         } else {
           _usuario = UsuarioModel.fromJson(data);
         }
-        
+
         notifyListeners();
       }
     } on HttpException catch (e) {
@@ -260,9 +282,15 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final data = <String, dynamic>{};
-      if (nombre != null) data['nombre'] = nombre;
-      if (apellido != null) data['apellido'] = apellido;
-      if (fotoPerfil != null) data['fotoPerfil'] = fotoPerfil;
+      if (nombre != null && nombre.trim().isNotEmpty) {
+        data['nombre'] = nombre.trim();
+      }
+      if (apellido != null && apellido.trim().isNotEmpty) {
+        data['apellido'] = apellido.trim();
+      }
+      if (fotoPerfil != null) {
+        data['fotoPerfil'] = fotoPerfil.trim();
+      }
 
       final response = await _httpService.put(
         AppConstants.profileUrl,
@@ -286,6 +314,58 @@ class AuthProvider extends ChangeNotifier {
       _setError(AppConstants.errorGenerico);
       _setLoading(false);
       return false;
+    }
+  }
+
+  // ============================================
+  // MENSAJES DE ERROR ESPECIFICOS
+  // ============================================
+
+  String _getLoginErrorMessage(HttpException e) {
+    switch (e.statusCode) {
+      case 400:
+        return 'Por favor ingresa tu correo y contrasena';
+      case 401:
+        return 'Correo o contrasena incorrectos';
+      case 403:
+        return 'Tu cuenta esta desactivada. Contacta al administrador';
+      case 404:
+        return 'No existe una cuenta con este correo';
+      case 429:
+        return 'Demasiados intentos. Espera un momento';
+      case 500:
+        return 'Error en el servidor. Intenta mas tarde';
+      default:
+        if (e.message.contains('conexion') || e.message.contains('Connection')) {
+          return 'Error de conexion. Verifica tu internet';
+        }
+        return 'Correo o contrasena incorrectos';
+    }
+  }
+
+  String _getRegisterErrorMessage(HttpException e) {
+    switch (e.statusCode) {
+      case 400:
+        if (e.message.contains('email') || e.message.contains('correo')) {
+          return 'El formato del correo no es valido';
+        }
+        if (e.message.contains('contrasena') || e.message.contains('password')) {
+          return 'La contrasena no cumple los requisitos';
+        }
+        return 'Por favor completa todos los campos requeridos';
+      case 409:
+        return 'Ya existe una cuenta con este correo';
+      case 422:
+        return 'Los datos ingresados no son validos';
+      case 429:
+        return 'Demasiados intentos. Espera un momento';
+      case 500:
+        return 'Error en el servidor. Intenta mas tarde';
+      default:
+        if (e.message.contains('conexion') || e.message.contains('Connection')) {
+          return 'Error de conexion. Verifica tu internet';
+        }
+        return 'Error al crear la cuenta. Intenta de nuevo';
     }
   }
 

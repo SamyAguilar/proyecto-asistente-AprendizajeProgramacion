@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../config/theme.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/loading_widget.dart';
@@ -41,7 +42,13 @@ class ProfileScreen extends StatelessWidget {
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 300),
+          ),
               (route) => false,
         );
       }
@@ -51,12 +58,29 @@ class ProfileScreen extends StatelessWidget {
   void _navigateToEdit(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const EditProfileScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
@@ -116,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
                             color: AppTheme.secondaryColor,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: Colors.white,
+                              color: isDark ? AppTheme.surfaceColorDark : Colors.white,
                               width: 2,
                             ),
                           ),
@@ -162,8 +186,12 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                // Informacion
+                // Informacion del usuario
                 _buildInfoCard(context, usuario),
+                const SizedBox(height: 16),
+
+                // Configuracion de tema
+                _buildThemeCard(context),
                 const SizedBox(height: 24),
 
                 // Boton editar
@@ -197,18 +225,21 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             _buildInfoRow(
+              context: context,
               icon: Icons.email_outlined,
               label: 'Correo electronico',
               value: usuario.email,
             ),
             const Divider(height: 24),
             _buildInfoRow(
+              context: context,
               icon: Icons.badge_outlined,
               label: 'Matricula',
               value: usuario.matricula ?? 'No registrada',
             ),
             const Divider(height: 24),
             _buildInfoRow(
+              context: context,
               icon: Icons.verified_user_outlined,
               label: 'Estado',
               value: usuario.estado ?? 'Activo',
@@ -219,11 +250,66 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildThemeCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Consumer<ThemeProvider>(
+          builder: (context, themeProvider, _) {
+            return Row(
+              children: [
+                Icon(
+                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tema oscuro',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        themeProvider.isDarkMode ? 'Activado' : 'Desactivado',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppTheme.textSecondaryColorDark
+                              : AppTheme.textSecondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: themeProvider.isDarkMode,
+                  onChanged: (_) => themeProvider.toggleTheme(),
+                  activeColor: AppTheme.primaryColor,
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoRow({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         Icon(
@@ -238,9 +324,11 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.textSecondaryColor,
+                  color: isDark
+                      ? AppTheme.textSecondaryColorDark
+                      : AppTheme.textSecondaryColor,
                 ),
               ),
               const SizedBox(height: 2),

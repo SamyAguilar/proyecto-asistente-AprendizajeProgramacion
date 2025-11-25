@@ -45,6 +45,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  String? _validateName(String? name, String fieldName) {
+    if (name == null || name.trim().isEmpty) {
+      return '$fieldName es requerido';
+    }
+    if (name.trim().length < 2) {
+      return '$fieldName debe tener al menos 2 caracteres';
+    }
+    if (name.trim().length > 50) {
+      return '$fieldName no puede tener mas de 50 caracteres';
+    }
+    return null;
+  }
+
+  String? _validateUrl(String? value) {
+    if (value != null && value.isNotEmpty) {
+      if (!value.startsWith('http://') && !value.startsWith('https://')) {
+        return 'La URL debe empezar con http:// o https://';
+      }
+    }
+    return null;
+  }
+
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -64,19 +86,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perfil actualizado correctamente'),
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Perfil actualizado correctamente'),
+            ],
+          ),
           backgroundColor: AppTheme.secondaryColor,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
       );
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.error ?? 'Error al actualizar perfil'),
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text(authProvider.error ?? 'Error al actualizar perfil')),
+            ],
+          ),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -175,15 +217,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _nombreController,
                     prefixIcon: Icons.person_outline,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'El nombre es requerido';
-                      }
-                      if (value.length < 2) {
-                        return 'El nombre debe tener al menos 2 caracteres';
-                      }
-                      return null;
-                    },
+                    validator: (value) => _validateName(value, 'El nombre'),
                   ),
                   const SizedBox(height: 16),
 
@@ -194,15 +228,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _apellidoController,
                     prefixIcon: Icons.person_outline,
                     textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'El apellido es requerido';
-                      }
-                      if (value.length < 2) {
-                        return 'El apellido debe tener al menos 2 caracteres';
-                      }
-                      return null;
-                    },
+                    validator: (value) => _validateName(value, 'El apellido'),
                   ),
                   const SizedBox(height: 16),
 
@@ -217,15 +243,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     onChanged: (value) {
                       setState(() {});
                     },
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        if (!value.startsWith('http://') &&
-                            !value.startsWith('https://')) {
-                          return 'La URL debe empezar con http:// o https://';
-                        }
-                      }
-                      return null;
-                    },
+                    validator: _validateUrl,
                   ),
                   const SizedBox(height: 32),
 
