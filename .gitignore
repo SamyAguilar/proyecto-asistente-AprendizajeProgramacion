@@ -25,3 +25,12 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+
+# No subir archivos de build
+*.apk
+*.aab
+*.ipa
