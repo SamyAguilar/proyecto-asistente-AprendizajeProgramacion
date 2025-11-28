@@ -11,7 +11,7 @@ export enum TipoPregunta {
 }
 
 export enum DificultadPregunta {
-  BASICA = 'básica',
+  BASICA = 'basica',
   INTERMEDIA = 'intermedia',
   AVANZADA = 'avanzada'
 }
@@ -51,7 +51,7 @@ export class PreguntaQuiz {
     nullable: true
   })
   @IsOptional()
-  @IsEnum(DificultadPregunta, { message: 'La dificultad debe ser básica, intermedia o avanzada' })
+  @IsEnum(DificultadPregunta, { message: 'La dificultad debe ser basica, intermedia o avanzada' })
   dificultad: DificultadPregunta;
 
   @Column({ type: 'text', nullable: true, name: 'retroalimentacion_correcta' })

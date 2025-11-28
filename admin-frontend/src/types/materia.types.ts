@@ -94,8 +94,8 @@ export interface ActualizarSubtemaDto {
 // ============================================
 // EJERCICIOS
 // ============================================
-export type DificultadEjercicio = 'básica' | 'intermedia' | 'avanzada';
-export type TipoEjercicio = 'codificación' | 'múltiple' | 'completar';
+export type DificultadEjercicio = 'basica' | 'intermedia' | 'avanzada';
+export type TipoEjercicio = 'codificacion' | 'multiple' | 'completar';
 
 export interface Ejercicio {
   id: number;
