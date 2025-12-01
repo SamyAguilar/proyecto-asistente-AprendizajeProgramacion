@@ -6,15 +6,14 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/gemini_provider.dart';
+import 'providers/ejercicio_provider.dart';
+import 'providers/quiz_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Inicializar servicios
   await StorageService().init();
-
   runApp(const MyApp());
 }
 
@@ -27,7 +26,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
-        ChangeNotifierProvider(create: (_) => GeminiProvider()), // <-- LULU Provider
+        ChangeNotifierProvider(create: (_) => GeminiProvider()),
+        ChangeNotifierProvider(create: (_) => EjercicioProvider()),
+        ChangeNotifierProvider(create: (_) => QuizProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
