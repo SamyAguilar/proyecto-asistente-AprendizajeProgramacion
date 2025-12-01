@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
-import '../../features/materias/screens/screens.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,10 +16,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // ✅ PÁGINAS REALES DEL BOTTOM NAVIGATION BAR
+  // Paginas del BottomNavigationBar
   final List<Widget> _pages = [
     const _DashboardPage(),
-    const MateriasListScreen(), // ✅ PANTALLA REAL DE MATERIAS
+    const _MateriasPage(),
     const _AyudaPage(),
     const ProfileScreen(),
   ];
@@ -68,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================
-// PÁGINA DE DASHBOARD
+// PAGINA DE DASHBOARD
 // ============================================
 
 class _DashboardPage extends StatelessWidget {
@@ -114,7 +113,7 @@ class _DashboardPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '¡Hola, ${usuario?.nombre ?? 'Usuario'}!',
+                                'Hola, ${usuario?.nombre ?? 'Usuario'}!',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -122,7 +121,7 @@ class _DashboardPage extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Bienvenido al asistente de programación',
+                                'Bienvenido al asistente de programacion',
                                 style: TextStyle(
                                   color: AppTheme.textSecondaryColor,
                                 ),
@@ -136,7 +135,7 @@ class _DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Estadísticas rápidas
+                // Estadisticas rapidas
                 const Text(
                   'Tu Progreso',
                   style: TextStyle(
@@ -190,9 +189,9 @@ class _DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Acciones rápidas
+                // Acciones rapidas
                 const Text(
-                  'Acciones Rápidas',
+                  'Acciones Rapidas',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -205,12 +204,7 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Retoma donde lo dejaste',
                   color: AppTheme.primaryColor,
                   onTap: () {
-                    // TODO: Implementar navegación a última materia
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Continuar aprendiendo'),
-                      ),
-                    );
+                    // TODO: Implementar navegacion a ultima materia
                   },
                 ),
                 const SizedBox(height: 8),
@@ -220,28 +214,17 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Revisa tu progreso en cada materia',
                   color: AppTheme.secondaryColor,
                   onTap: () {
-                    // ✅ NAVEGAR A MIS MATERIAS
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MisMateriasScreen(),
-                      ),
-                    );
+                    // TODO: Navegar a materias
                   },
                 ),
                 const SizedBox(height: 8),
                 _buildActionCard(
                   icon: Icons.help,
                   title: 'Pedir ayuda',
-                  subtitle: 'El asistente de IA está disponible',
+                  subtitle: 'El asistente de IA esta disponible',
                   color: AppTheme.accentColor,
                   onTap: () {
-                    // TODO: Navegar a ayuda (Lulu)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Asistente IA (Lulu)'),
-                      ),
-                    );
+                    // TODO: Navegar a ayuda
                   },
                 ),
               ],
@@ -326,7 +309,52 @@ class _DashboardPage extends StatelessWidget {
 }
 
 // ============================================
-// PÁGINA DE AYUDA (Placeholder para Lulu)
+// PAGINA DE MATERIAS (Placeholder para Tono)
+// ============================================
+
+class _MateriasPage extends StatelessWidget {
+  const _MateriasPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Materias'),
+        automaticallyImplyLeading: false,
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.book_outlined,
+              size: 64,
+              color: AppTheme.textSecondaryColor,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Modulo de Materias',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Proximamente - Implementar por Tono',
+              style: TextStyle(
+                color: AppTheme.textSecondaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// PAGINA DE AYUDA (Placeholder para Lulu)
 // ============================================
 
 class _AyudaPage extends StatelessWidget {
@@ -358,7 +386,7 @@ class _AyudaPage extends StatelessWidget {
             ),
             SizedBox(height: 8),
             Text(
-              'Próximamente - Implementar por Lulu',
+              'Proximamente - Implementar por Lulu',
               style: TextStyle(
                 color: AppTheme.textSecondaryColor,
               ),
