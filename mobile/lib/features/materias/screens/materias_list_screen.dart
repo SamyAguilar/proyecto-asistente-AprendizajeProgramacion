@@ -60,19 +60,32 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
       ),
       body: Column(
         children: [
-          // Barra de búsqueda
+          // Barra de búsqueda ✅ CORREGIDO
           Container(
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).primaryColor.withOpacity(0.1),
             child: TextField(
               controller: _searchController,
               onChanged: _buscarMaterias,
+              style: const TextStyle(
+                color: Colors.white, // ✅ Texto blanco
+                fontSize: 16,
+              ),
               decoration: InputDecoration(
                 hintText: 'Buscar materias...',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.6), // ✅ Hint visible
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: Colors.white70, // ✅ Ícono visible
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(
+                          Icons.clear,
+                          color: Colors.white70,
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           _buscarMaterias('');
@@ -80,10 +93,24 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Colors.white.withOpacity(0.15), // ✅ Fondo visible
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Colors.white,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
