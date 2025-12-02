@@ -4,14 +4,14 @@ import { Subtema } from './Subtema';
 import { IntentoEjercicio } from './IntentoEjercicio';
 
 export enum DificultadEjercicio {
-  BASICA = 'básica',
+  BASICA = 'basica',
   INTERMEDIA = 'intermedia',
   AVANZADA = 'avanzada'
 }
 
 export enum TipoEjercicio {
-  CODIFICACION = 'codificación',
-  MULTIPLE = 'múltiple',
+  CODIFICACION = 'codificacion',
+  MULTIPLE = 'multiple',
   COMPLETAR = 'completar'
 }
 
@@ -33,7 +33,7 @@ export class Ejercicio {
     nullable: true
   })
   @IsOptional()
-  @IsEnum(DificultadEjercicio, { message: 'La dificultad debe ser básica, intermedia o avanzada' })
+  @IsEnum(DificultadEjercicio, { message: 'La dificultad debe ser basica, intermedia o avanzada' })
   dificultad: DificultadEjercicio;
 
   @Column({ type: 'text', nullable: true, name: 'codigo_base' })
@@ -55,7 +55,7 @@ export class Ejercicio {
     name: 'tipo_ejercicio'
   })
   @IsOptional()
-  @IsEnum(TipoEjercicio, { message: 'El tipo debe ser codificación, múltiple o completar' })
+  @IsEnum(TipoEjercicio, { message: 'El tipo debe ser codificacion, multiple o completar' })
   tipoEjercicio: TipoEjercicio;
 
   @Column({ type: 'varchar', length: 50, nullable: true, name: 'lenguaje_programacion' })
@@ -64,9 +64,9 @@ export class Ejercicio {
   lenguajeProgramacion: string;
 
   @Column({ type: 'int', default: 10, name: 'puntos_maximos' })
-  @IsInt({ message: 'Los puntos máximos deben ser un número entero' })
-  @Min(1, { message: 'Los puntos máximos deben ser mayor a 0' })
-  @Max(100, { message: 'Los puntos máximos deben ser menor o igual a 100' })
+  @IsInt({ message: 'Los puntos maximos deben ser un numero entero' })
+  @Min(1, { message: 'Los puntos maximos deben ser mayor a 0' })
+  @Max(100, { message: 'Los puntos maximos deben ser menor o igual a 100' })
   puntosMaximos: number;
 
   // Relaciones

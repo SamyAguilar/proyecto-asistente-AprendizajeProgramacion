@@ -88,7 +88,7 @@ export class QuizService {
         const respuestaLulu = await this.generateQuestionsUseCase.execute({
           subtema_id: subtemaId,
           cantidad: cantidadFaltante,
-          dificultad: 'intermedia' // String literal sin tilde para GenerarPreguntasRequest
+          dificultad: 'intermedia'
         });
 
         // Las preguntas ya estan guardadas en BD por GenerateQuestionsUseCase
@@ -284,7 +284,7 @@ export class QuizService {
 
     // Validar y convertir dificultad a enum
     let dificultadEnum: DificultadPregunta;
-    if (dificultad === 'básica') {
+    if (dificultad === 'basica') {
       dificultadEnum = DificultadPregunta.BASICA;
     } else if (dificultad === 'intermedia') {
       dificultadEnum = DificultadPregunta.INTERMEDIA;

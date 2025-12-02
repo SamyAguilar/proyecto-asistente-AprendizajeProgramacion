@@ -27,21 +27,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 // Funciones helper para normalizar textos
 const normalizarTipo = (tipo: string): string => {
-  if (tipo === 'codificacion' || tipo === 'codificación') return 'Codificacion';
-  if (tipo === 'multiple' || tipo === 'múltiple') return 'Multiple';
+  if (tipo === 'codificacion') return 'Codificacion';
+  if (tipo === 'multiple') return 'Multiple';
   if (tipo === 'completar') return 'Completar';
   return tipo;
 };
 
 const normalizarDificultad = (dificultad: string): string => {
-  if (dificultad === 'basica' || dificultad === 'básica') return 'Basica';
+  if (dificultad === 'basica') return 'Basica';
   if (dificultad === 'intermedia') return 'Intermedia';
   if (dificultad === 'avanzada') return 'Avanzada';
   return dificultad;
 };
 
 const getDificultadColor = (dificultad: string) => {
-  if (dificultad === 'basica' || dificultad === 'básica') return 'success';
+  if (dificultad === 'basica') return 'success';
   if (dificultad === 'intermedia') return 'warning';
   if (dificultad === 'avanzada') return 'error';
   return 'default';

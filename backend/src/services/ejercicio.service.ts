@@ -87,15 +87,15 @@ export class EjercicioService {
       .groupBy('ejercicio.id')
       .getRawMany();
 
-    return ejercicios.map(ej => ({
+      return ejercicios.map(ej => ({
       id: ej.ejercicio_id,
-      subtemaId: ej.ejercicio_subtemaId,
+      subtemaId: ej.ejercicio_subtema_id,
       enunciado: ej.ejercicio_enunciado,
-      dificultad: ej.ejercicio_dificultad || 'básica',
-      tipoEjercicio: ej.ejercicio_tipoEjercicio || 'codificación',
-      puntosMaximos: ej.ejercicio_puntosMaximos || 10,
-      lenguajeProgramacion: ej.ejercicio_lenguajeProgramacion || 'javascript',
-      codigoBase: ej.ejercicio_codigoBase || '',
+      dificultad: ej.ejercicio_dificultad || 'basica',
+      tipoEjercicio: ej.ejercicio_tipo_ejercicio || 'codificacion',
+      puntosMaximos: ej.ejercicio_puntos_maximos || 10,
+      lenguajeProgramacion: ej.ejercicio_lenguaje_programacion || 'javascript',
+      codigoBase: ej.ejercicio_codigo_base || '',
       totalIntentos: parseInt(ej.totalIntentos) || 0
     }));
   }
@@ -120,8 +120,8 @@ export class EjercicioService {
       id: ejercicio.id,
       subtemaId: ejercicio.subtemaId,
       enunciado: ejercicio.enunciado,
-      dificultad: ejercicio.dificultad || 'básica',
-      tipoEjercicio: ejercicio.tipoEjercicio || 'codificación',
+      dificultad: ejercicio.dificultad || 'basica',
+      tipoEjercicio: ejercicio.tipoEjercicio || 'codificacion',
       puntosMaximos: ejercicio.puntosMaximos || 10,
       lenguajeProgramacion: ejercicio.lenguajeProgramacion || 'javascript',
       codigoBase: ejercicio.codigoBase || ''

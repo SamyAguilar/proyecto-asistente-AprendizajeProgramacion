@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Save, ArrowBack } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ejerciciosApi } from '../../api/ejercicios.api';
@@ -22,8 +22,8 @@ import toast from 'react-hot-toast';
 const ejercicioSchema = z.object({
   subtemaId: z.number().min(1),
   enunciado: z.string().min(10, 'El enunciado debe tener al menos 10 caracteres'),
-  dificultad: z.enum(['básica', 'intermedia', 'avanzada']),
-  tipoEjercicio: z.enum(['codificación', 'múltiple', 'completar']),
+  dificultad: z.enum(['basica', 'intermedia', 'avanzada']),
+  tipoEjercicio: z.enum(['codificacion', 'multiple', 'completar']),
   puntosMaximos: z.number().min(1).max(100),
   lenguajeProgramacion: z.string().optional(),
   codigoBase: z.string().optional(),
@@ -46,13 +46,14 @@ export const EjercicioForm = () => {
     formState: { errors },
     reset,
     watch,
+    control,
   } = useForm<EjercicioFormData>({
     resolver: zodResolver(ejercicioSchema),
     defaultValues: {
       subtemaId: subtemaId ? Number(subtemaId) : undefined,
       puntosMaximos: 10,
-      dificultad: 'básica',
-      tipoEjercicio: 'codificación',
+      dificultad: 'basica',
+      tipoEjercicio: 'codificacion',
     },
   });
 
@@ -120,8 +121,8 @@ export const EjercicioForm = () => {
   return (
     <Box>
       <Box display="flex" alignItems="center" mb={3}>
-        <Button 
-          startIcon={<ArrowBack />} 
+        <Button
+          startIcon={<ArrowBack />}
           onClick={() => {
             if (subtemaId) {
               navigate(`/dashboard/ejercicios/${subtemaId}`);
@@ -140,7 +141,7 @@ export const EjercicioForm = () => {
       <Paper sx={{ p: 4 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={3}>
-            <Typography variant="h6">Información Básica</Typography>
+            <Typography variant="h6">Informacion Basica</Typography>
 
             {/* Enunciado */}
             <TextField
@@ -156,37 +157,49 @@ export const EjercicioForm = () => {
 
             {/* Tipo, Dificultad y Puntos */}
             <Box display="flex" gap={2}>
-              <TextField
-                select
-                label="Tipo de Ejercicio"
-                {...register('tipoEjercicio')}
-                error={!!errors.tipoEjercicio}
-                helperText={errors.tipoEjercicio?.message}
-                required
-                sx={{ flex: 1 }}
-              >
-                <MenuItem value="codificación">Codificación</MenuItem>
-                <MenuItem value="múltiple">Múltiple</MenuItem>
-                <MenuItem value="completar">Completar</MenuItem>
-              </TextField>
+              <Controller
+                name="tipoEjercicio"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Tipo de Ejercicio"
+                    {...field}
+                    error={!!errors.tipoEjercicio}
+                    helperText={errors.tipoEjercicio?.message}
+                    required
+                    sx={{ flex: 1 }}
+                  >
+                    <MenuItem value="codificacion">Codificacion</MenuItem>
+                    <MenuItem value="multiple">Multiple</MenuItem>
+                    <MenuItem value="completar">Completar</MenuItem>
+                  </TextField>
+                )}
+              />
 
-              <TextField
-                select
-                label="Dificultad"
-                {...register('dificultad')}
-                error={!!errors.dificultad}
-                helperText={errors.dificultad?.message}
-                required
-                sx={{ flex: 1 }}
-              >
-                <MenuItem value="básica">Básica</MenuItem>
-                <MenuItem value="intermedia">Intermedia</MenuItem>
-                <MenuItem value="avanzada">Avanzada</MenuItem>
-              </TextField>
+              <Controller
+                name="dificultad"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    select
+                    label="Dificultad"
+                    {...field}
+                    error={!!errors.dificultad}
+                    helperText={errors.dificultad?.message}
+                    required
+                    sx={{ flex: 1 }}
+                  >
+                    <MenuItem value="basica">Basica</MenuItem>
+                    <MenuItem value="intermedia">Intermedia</MenuItem>
+                    <MenuItem value="avanzada">Avanzada</MenuItem>
+                  </TextField>
+                )}
+              />
 
               <TextField
                 type="number"
-                label="Puntos Máximos"
+                label="Puntos Maximos"
                 {...register('puntosMaximos', { valueAsNumber: true })}
                 error={!!errors.puntosMaximos}
                 helperText={errors.puntosMaximos?.message}
@@ -197,45 +210,51 @@ export const EjercicioForm = () => {
             </Box>
 
             {/* Lenguaje de Programación (solo para código) */}
-            {tipoEjercicio === 'codificación' && (
+            {tipoEjercicio === 'codificacion' && (
               <>
                 <Divider />
-                <Typography variant="h6">Configuración de Código</Typography>
+                <Typography variant="h6">Configuracion de Codigo</Typography>
 
-                <TextField
-                  select
-                  fullWidth
-                  label="Lenguaje de Programación"
-                  {...register('lenguajeProgramacion')}
-                  error={!!errors.lenguajeProgramacion}
-                  helperText={errors.lenguajeProgramacion?.message}
-                >
-                  <MenuItem value="javascript">JavaScript</MenuItem>
-                  <MenuItem value="python">Python</MenuItem>
-                  <MenuItem value="java">Java</MenuItem>
-                  <MenuItem value="cpp">C++</MenuItem>
-                  <MenuItem value="csharp">C#</MenuItem>
-                </TextField>
-
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={6}
-                  label="Código Base"
-                  {...register('codigoBase')}
-                  error={!!errors.codigoBase}
-                  helperText={errors.codigoBase?.message || 'Código inicial que verá el estudiante'}
-                  placeholder="function ejercicio() {\n  // Tu código aquí\n}"
+                <Controller
+                  name="lenguajeProgramacion"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Lenguaje de Programacion"
+                      {...field}
+                      error={!!errors.lenguajeProgramacion}
+                      helperText={errors.lenguajeProgramacion?.message}
+                    >
+                      <MenuItem value="javascript">JavaScript</MenuItem>
+                      <MenuItem value="python">Python</MenuItem>
+                      <MenuItem value="java">Java</MenuItem>
+                      <MenuItem value="cpp">C++</MenuItem>
+                      <MenuItem value="csharp">C#</MenuItem>
+                    </TextField>
+                  )}
                 />
 
                 <TextField
                   fullWidth
                   multiline
                   rows={6}
-                  label="Código Solución"
+                  label="Codigo Base"
+                  {...register('codigoBase')}
+                  error={!!errors.codigoBase}
+                  helperText={errors.codigoBase?.message || 'Codigo inicial que vera el estudiante'}
+                  placeholder="function ejercicio() {\n  // Tu codigo aqui\n}"
+                />
+
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  label="Codigo Solucion"
                   {...register('codigoSolucion')}
                   error={!!errors.codigoSolucion}
-                  helperText={errors.codigoSolucion?.message || 'Solución correcta del ejercicio'}
+                  helperText={errors.codigoSolucion?.message || 'Solucion correcta del ejercicio'}
                 />
               </>
             )}
