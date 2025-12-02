@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../models/models.dart';
-import '../../../services/http_service.dart';
+import '../models/progreso_model.dart';
+import '../services/http_service.dart';
 
 class ProgresoProvider with ChangeNotifier {
   final HttpService _httpService;

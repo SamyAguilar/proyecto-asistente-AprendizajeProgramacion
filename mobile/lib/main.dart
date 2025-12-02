@@ -10,7 +10,9 @@ import 'services/http_service.dart';
 import 'screens/splash_screen.dart';
 
 // 🆕 IMPORTA TUS PROVIDERS DE TOÑO
-import 'features/materias/providers/providers.dart';
+import 'providers/materia_provider.dart';
+import 'providers/contenido_provider.dart';
+import 'providers/progreso_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

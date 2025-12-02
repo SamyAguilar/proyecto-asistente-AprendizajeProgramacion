@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/models.dart';
-import '../providers/providers.dart';
-import '../widgets/widgets.dart';
+import '../../models/materia_model.dart';
+import '../../providers/materia_provider.dart';
+import '../../providers/contenido_provider.dart';
+import '../../providers/progreso_provider.dart';
+import '../../widgets/progreso_bar.dart';
+import '../../widgets/tema_card.dart';
 import 'tema_detail_screen.dart';
 
 class MateriaDetailScreen extends StatefulWidget {

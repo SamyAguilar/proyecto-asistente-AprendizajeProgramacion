@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
-import '../models/models.dart';
-import '../../../services/http_service.dart';
+import '../models/tema_model.dart';
+import '../models/subtema_model.dart';
+import '../services/http_service.dart';
 
 class ContenidoProvider with ChangeNotifier {
   final HttpService _httpService;

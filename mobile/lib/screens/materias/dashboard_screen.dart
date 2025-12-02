@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/providers.dart';
-import '../widgets/widgets.dart';
+import '../../models/materia_model.dart';
+import '../../providers/materia_provider.dart';
+import '../../providers/progreso_provider.dart';
+import '../../widgets/materia_card.dart';
+import '../../widgets/estadistica_card.dart';
+import '../../widgets/progreso_bar.dart';
 import 'materia_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {

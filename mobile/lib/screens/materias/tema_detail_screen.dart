@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/models.dart';
-import '../providers/providers.dart';
-import '../widgets/widgets.dart';
+import '../../models/tema_model.dart';
+import '../../providers/contenido_provider.dart';
+import '../../providers/progreso_provider.dart';
+import '../../widgets/progreso_bar.dart';
+import '../../widgets/subtema_card.dart';
 import 'subtema_detail_screen.dart';
 
 class TemaDetailScreen extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../../models/subtema_model.dart';
 
 class SubtemaDetailScreen extends StatelessWidget {
   final SubtemaModel subtema;
