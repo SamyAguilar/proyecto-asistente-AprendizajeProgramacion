@@ -1,9 +1,10 @@
-import '../../providers/materia_provider.dart';
-import '../../providers/progreso_provider.dart';
+// lib/screens/materias/materias_list_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/materia_model.dart';
 import '../../providers/materia_provider.dart';
+import '../../providers/progreso_provider.dart';
 import '../../widgets/materia_card.dart';
 import 'materia_detail_screen.dart';
 
@@ -55,6 +56,9 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Detectar si estamos en modo oscuro
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Materias Disponibles'),
@@ -62,31 +66,35 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
       ),
       body: Column(
         children: [
-          // Barra de búsqueda ✅ CORREGIDO
+          // ✅ Barra de búsqueda ADAPTABLE
           Container(
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: isDarkMode 
+                ? Theme.of(context).primaryColor.withOpacity(0.1)
+                : Theme.of(context).primaryColor.withOpacity(0.05),
             child: TextField(
               controller: _searchController,
               onChanged: _buscarMaterias,
-              style: const TextStyle(
-                color: Colors.white, // ✅ Texto blanco
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black87,
                 fontSize: 16,
               ),
               decoration: InputDecoration(
                 hintText: 'Buscar materias...',
                 hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.6), // ✅ Hint visible
+                  color: isDarkMode 
+                      ? Colors.white.withOpacity(0.6)
+                      : Colors.black45,
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
-                  color: Colors.white70, // ✅ Ícono visible
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.black54,
                         ),
                         onPressed: () {
                           _searchController.clear();
@@ -95,7 +103,9 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.15), // ✅ Fondo visible
+                fillColor: isDarkMode 
+                    ? Colors.white.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -103,14 +113,16 @@ class _MateriasListScreenState extends State<MateriasListScreen> {
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: Colors.white.withOpacity(0.3),
+                    color: isDarkMode 
+                        ? Colors.white.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
                     width: 1,
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Colors.white,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).primaryColor,
                     width: 2,
                   ),
                 ),

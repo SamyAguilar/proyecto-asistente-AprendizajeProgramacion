@@ -1,9 +1,5 @@
-// lib/screens/materias/subtema_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import '../../models/subtema_model.dart';
-import '../ejercicios/ejercicios_list_screen.dart'; // [PANCHO]
-import '../quiz/quiz_intro_screen.dart'; // [PANCHO]
 
 class SubtemaDetailScreen extends StatelessWidget {
   final SubtemaModel subtema;
@@ -86,7 +82,7 @@ class SubtemaDetailScreen extends StatelessWidget {
 
             const Divider(height: 1),
 
-            // ✅ BOTONES DE ACCIÓN - INTEGRACIÓN CON PANCHO
+            // ✅ BOTONES DE ACCIÓN - CONEXIÓN CON PANCHO
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -96,6 +92,8 @@ class SubtemaDetailScreen extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () {
                       // ✅ NAVEGACIÓN A MÓDULO DE PANCHO - EJERCICIOS
+                      // Cuando Pancho tenga su pantalla lista, descomenta esto:
+                      /*
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -103,6 +101,18 @@ class SubtemaDetailScreen extends StatelessWidget {
                             subtemaId: subtema.id,
                             subtemaName: subtema.nombre,
                           ),
+                        ),
+                      );
+                      */
+                      
+                      // Mientras tanto, mostramos un mensaje
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Navegando a ejercicios del subtema: ${subtema.nombre}',
+                          ),
+                          backgroundColor: Colors.blue,
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     },
@@ -121,6 +131,8 @@ class SubtemaDetailScreen extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: () {
                       // ✅ NAVEGACIÓN A MÓDULO DE PANCHO - QUIZ
+                      // Cuando Pancho tenga su pantalla lista, descomenta esto:
+                      /*
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -128,6 +140,18 @@ class SubtemaDetailScreen extends StatelessWidget {
                             subtemaId: subtema.id,
                             subtemaName: subtema.nombre,
                           ),
+                        ),
+                      );
+                      */
+                      
+                      // Mientras tanto, mostramos un mensaje
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Navegando a quiz del subtema: ${subtema.nombre}',
+                          ),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     },

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../providers/materia_provider.dart';
 import '../../providers/progreso_provider.dart';
 import '../../widgets/materia_card.dart';
-import '../../widgets/estadistica_card.dart';
 import 'materia_detail_screen.dart';
 
 class MisMateriasScreen extends StatefulWidget {
