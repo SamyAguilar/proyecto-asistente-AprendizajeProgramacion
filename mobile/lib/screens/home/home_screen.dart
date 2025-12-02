@@ -2,14 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
-import '../ayuda/ayuda_screen.dart'; // <-- IMPORTAR LUZIA
 
-// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS DE TOÑO
+// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS
 import '../materias/materias_list_screen.dart';
-import '../materias/mis_materias_screen.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
+import '../materias/mis_materias_screen.dart'; // Importar MisMateriasScreen para la navegación
+import '../ayuda/ayuda_screen.dart'; // Asumiendo que AyudaScreen existe
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,18 +20,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // Paginas del BottomNavigationBar
-  final List<Widget> _pages = [
-    const _DashboardPage(),
-    const _MateriasPage(),
-    const AyudaScreen(), // <-- USAR LUZIA EN LUGAR DEL PLACEHOLDER
-    const ProfileScreen(),
+  // ✅ PÁGINAS REALES DEL BOTTOM NAVIGATION BAR
+  final List<Widget> _pages = const [
+    _DashboardPage(), // 0 - Inicio
+    MateriasListScreen(), // 1 - Materias (Lista)
+    AyudaScreen(), // 2 - Ayuda (LUZIA)
+    ProfileScreen(), // 3 - Perfil
   ];
 
   @override
   Widget build(BuildContext context) {
+    // La variable isDark solo se usa para la interfaz de usuario.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -74,16 +74,108 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================
-// PAGINA DE DASHBOARD
+// PAGINA DE DASHBOARD (Anidada)
+// Se cambió de StatelessWidget a un StatefulWidget para acceder al estado de _HomeScreenState
 // ============================================
 
 class _DashboardPage extends StatelessWidget {
   const _DashboardPage();
 
+  // Método auxiliar para crear las tarjetas de estadísticas
+  Widget _buildStatCard(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String value,
+        required Color color,
+      }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      color: isDark ? Colors.grey[850] : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Método auxiliar para crear las tarjetas de acciones rápidas
+  Widget _buildActionCard(
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required String subtitle,
+        required Color color,
+        required VoidCallback onTap,
+      }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Card(
+      color: isDark ? Colors.grey[850] : null,
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(isDark ? 0.2 : 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: color,
+          ),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : null,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: isDark ? Colors.grey[500] : null,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inicio'),
@@ -161,7 +253,6 @@ class _DashboardPage extends StatelessWidget {
                     Expanded(
                       child: _buildStatCard(
                         context,
-                        isDark: isDark,
                         icon: Icons.code,
                         title: 'Ejercicios',
                         value: '0',
@@ -172,7 +263,6 @@ class _DashboardPage extends StatelessWidget {
                     Expanded(
                       child: _buildStatCard(
                         context,
-                        isDark: isDark,
                         icon: Icons.quiz,
                         title: 'Quizzes',
                         value: '0',
@@ -183,7 +273,6 @@ class _DashboardPage extends StatelessWidget {
                     Expanded(
                       child: _buildStatCard(
                         context,
-                        isDark: isDark,
                         icon: Icons.star,
                         title: 'Promedio',
                         value: '0.0',
@@ -206,7 +295,6 @@ class _DashboardPage extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildActionCard(
                   context,
-                  isDark: isDark,
                   icon: Icons.play_arrow,
                   title: 'Continuar aprendiendo',
                   subtitle: 'Retoma donde lo dejaste',
@@ -218,29 +306,33 @@ class _DashboardPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 _buildActionCard(
                   context,
-                  isDark: isDark,
                   icon: Icons.school,
                   title: 'Ver mis materias',
                   subtitle: 'Revisa tu progreso en cada materia',
                   color: AppTheme.secondaryColor,
                   onTap: () {
-                    // TODO: Navegar a materias
+                    // Navegar a MisMateriasScreen (ejemplo de navegación a pantalla secundaria)
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MisMateriasScreen(),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 8),
                 _buildActionCard(
                   context,
-                  isDark: isDark,
                   icon: Icons.smart_toy,
                   title: 'Pedir ayuda a LUZIA',
                   subtitle: 'El asistente de IA esta disponible',
                   color: AppTheme.accentColor,
                   onTap: () {
-                    // Navegar a la pestaña de LUZIA
+                    // Navegar a la pestaña de LUZIA (índice 2)
                     final homeState = context.findAncestorStateOfType<_HomeScreenState>();
                     if (homeState != null) {
                       homeState.setState(() {
-                        homeState._currentIndex = 2; // Indice de LUZIA
+                        homeState._currentIndex = 2;
                       });
                     }
                   },
@@ -249,142 +341,6 @@ class _DashboardPage extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context, {
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Card(
-      color: isDark ? Colors.grey[850] : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionCard(
-    BuildContext context, {
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      color: isDark ? Colors.grey[850] : null,
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(isDark ? 0.2 : 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: isDark ? Colors.grey[400] : null,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: isDark ? Colors.grey[500] : null,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-// ============================================
-// PAGINA DE MATERIAS (Placeholder para Tono)
-// ============================================
-
-class _MateriasPage extends StatelessWidget {
-  const _MateriasPage();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis Materias'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.book_outlined,
-              size: 80,
-              color: isDark ? Colors.grey[600] : Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Materias',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Aqui se mostraran tus materias\n(Modulo de TONO)',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
