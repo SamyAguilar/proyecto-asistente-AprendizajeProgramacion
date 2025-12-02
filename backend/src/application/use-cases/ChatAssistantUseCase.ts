@@ -14,7 +14,7 @@ export class ChatAssistantUseCase {
       // Llamar a Gemini
       const respuesta = await this.geminiClient.generate(prompt, {
         temperature: 0.8,
-        maxTokens: 3800,  // Reducido de 2524 a 1800 para evitar respuestas muy largas
+        maxTokens: 1800,  // Reducido de 2524 a 1800 para evitar respuestas muy largas
         tipo: 'chat'
       });
 
