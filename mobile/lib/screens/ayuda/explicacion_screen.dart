@@ -107,7 +107,7 @@ class _ExplicacionScreenState extends State<ExplicacionScreen> {
                   )
                 else if (gemini.error != null)
                   ErrorDisplayWidget(
-                    message: gemini.error!,
+                    mensaje: gemini.error!,
                     onRetry: () => _explicarConcepto(gemini),
                   )
                 else if (_mostrarResultado && _explicacion != null)

@@ -89,7 +89,7 @@ class EjercicioProvider extends ChangeNotifier {
         notifyListeners();
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al cargar ejercicios: ${e.toString()}');
     }
@@ -122,7 +122,7 @@ class EjercicioProvider extends ChangeNotifier {
         notifyListeners();
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al cargar ejercicio: ${e.toString()}');
     }
@@ -176,7 +176,7 @@ class EjercicioProvider extends ChangeNotifier {
         return intento;
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al enviar ejercicio: ${e.toString()}');
     }
@@ -227,7 +227,7 @@ class EjercicioProvider extends ChangeNotifier {
         notifyListeners();
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al cargar intentos: ${e.toString()}');
     }

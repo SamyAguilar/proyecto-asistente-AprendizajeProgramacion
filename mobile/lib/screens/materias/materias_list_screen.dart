@@ -1,3 +1,5 @@
+import '../../providers/materia_provider.dart';
+import '../../providers/progreso_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/materia_model.dart';

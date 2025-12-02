@@ -1,6 +1,6 @@
 // lib/widgets/error_widget.dart
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ErrorWidget;
 import '../config/theme.dart';
 import 'custom_button.dart';
 
@@ -9,15 +9,15 @@ import 'custom_button.dart';
 // ============================================
 
 class ErrorDisplayWidget extends StatelessWidget {
-  final String message;
-  final String? details;
+  final String mensaje;  // ← CAMBIADO: message → mensaje
+  final String? detalles;  // ← CAMBIADO: details → detalles
   final VoidCallback? onRetry;
   final IconData icon;
 
   const ErrorDisplayWidget({
     super.key,
-    required this.message,
-    this.details,
+    required this.mensaje,  // ← CAMBIADO
+    this.detalles,  // ← CAMBIADO
     this.onRetry,
     this.icon = Icons.error_outline,
   });
@@ -37,7 +37,7 @@ class ErrorDisplayWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              message,
+              mensaje,  // ← CAMBIADO
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -45,10 +45,10 @@ class ErrorDisplayWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (details != null) ...[
+            if (detalles != null) ...[  // ← CAMBIADO
               const SizedBox(height: 8),
               Text(
-                details!,
+                detalles!,  // ← CAMBIADO
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondaryColor,
@@ -71,6 +71,12 @@ class ErrorDisplayWidget extends StatelessWidget {
     );
   }
 }
+
+// ============================================
+// ALIAS PARA COMPATIBILIDAD
+// ============================================
+// Permite usar ErrorWidget en lugar de ErrorDisplayWidget
+typedef ErrorWidget = ErrorDisplayWidget;
 
 // ============================================
 // WIDGET DE ESTADO VACIO
@@ -156,8 +162,8 @@ class NoConnectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ErrorDisplayWidget(
-      message: 'Sin conexion a internet',
-      details: 'Verifica tu conexion e intenta de nuevo',
+      mensaje: 'Sin conexion a internet',  // ← CAMBIADO
+      detalles: 'Verifica tu conexion e intenta de nuevo',  // ← CAMBIADO
       icon: Icons.wifi_off,
       onRetry: onRetry,
     );

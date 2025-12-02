@@ -105,7 +105,7 @@ class QuizProvider extends ChangeNotifier {
         notifyListeners();
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al cargar preguntas: ${e.toString()}');
     }
@@ -188,7 +188,7 @@ class QuizProvider extends ChangeNotifier {
         return intento;
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al enviar respuesta: ${e.toString()}');
     }
@@ -257,7 +257,7 @@ class QuizProvider extends ChangeNotifier {
         notifyListeners();
       }
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
     } catch (e) {
       _setError('Error al cargar resultados: ${e.toString()}');
     }
