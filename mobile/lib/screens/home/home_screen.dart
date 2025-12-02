@@ -6,7 +6,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
-import '../../features/materias/screens/screens.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
 import '../ayuda/ayuda_screen.dart'; // <-- IMPORTAR LUZIA
 
 class HomeScreen extends StatefulWidget {
@@ -19,11 +18,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // ✅ PÁGINAS REALES DEL BOTTOM NAVIGATION BAR
+  // Paginas del BottomNavigationBar
   final List<Widget> _pages = [
     const _DashboardPage(),
-    const MateriasListScreen(), // ✅ PANTALLA REAL DE MATERIAS
-    const _AyudaPage(),
     const _MateriasPage(),
     const AyudaScreen(), // <-- USAR LUZIA EN LUGAR DEL PLACEHOLDER
     const ProfileScreen(),
@@ -74,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================
-// PÁGINA DE DASHBOARD
+// PAGINA DE DASHBOARD
 // ============================================
 
 class _DashboardPage extends StatelessWidget {
@@ -123,8 +120,6 @@ class _DashboardPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '¡Hola, ${usuario?.nombre ?? 'Usuario'}!',
-                                style: const TextStyle(
                                 'Hola, ${usuario?.nombre ?? 'Usuario'}!',
                                 style: TextStyle(
                                   fontSize: 20,
@@ -133,8 +128,6 @@ class _DashboardPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
-                                'Bienvenido al asistente de programación',
                               Text(
                                 'Bienvenido de vuelta',
                                 style: TextStyle(
@@ -150,8 +143,6 @@ class _DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Estadísticas rápidas
-                const Text(
                 // Estadisticas
                 Text(
                   'Tu Progreso',
@@ -200,9 +191,6 @@ class _DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Acciones rápidas
-                const Text(
-                  'Acciones Rápidas',
                 // Acciones rapidas
                 Text(
                   'Acciones Rapidas',
@@ -221,12 +209,7 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Retoma donde lo dejaste',
                   color: AppTheme.primaryColor,
                   onTap: () {
-                    // TODO: Implementar navegación a última materia
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Continuar aprendiendo'),
-                      ),
-                    );
+                    // TODO: Implementar navegacion a ultima materia
                   },
                 ),
                 const SizedBox(height: 8),
@@ -238,28 +221,11 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Revisa tu progreso en cada materia',
                   color: AppTheme.secondaryColor,
                   onTap: () {
-                    // ✅ NAVEGAR A MIS MATERIAS
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MisMateriasScreen(),
-                      ),
-                    );
+                    // TODO: Navegar a materias
                   },
                 ),
                 const SizedBox(height: 8),
                 _buildActionCard(
-                  icon: Icons.help,
-                  title: 'Pedir ayuda',
-                  subtitle: 'El asistente de IA está disponible',
-                  color: AppTheme.accentColor,
-                  onTap: () {
-                    // TODO: Navegar a ayuda (Lulu)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Asistente IA (Lulu)'),
-                      ),
-                    );
                   context,
                   isDark: isDark,
                   icon: Icons.smart_toy,
@@ -373,20 +339,6 @@ class _DashboardPage extends StatelessWidget {
 }
 
 // ============================================
-// PÁGINA DE AYUDA (Placeholder para Lulu)
-// ============================================
-
-class _AyudaPage extends StatelessWidget {
-  const _AyudaPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ayuda'),
-        automaticallyImplyLeading: false,
-      ),
-      body: const Center(
 // PAGINA DE MATERIAS (Placeholder para Tono)
 // ============================================
 
@@ -407,31 +359,6 @@ class _MateriasPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.help_outline,
-              size: 64,
-              color: AppTheme.textSecondaryColor,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Asistente de IA',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Próximamente - Implementar por Lulu',
-              style: TextStyle(
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
               Icons.book_outlined,
               size: 80,
               color: isDark ? Colors.grey[600] : Colors.grey[400],
