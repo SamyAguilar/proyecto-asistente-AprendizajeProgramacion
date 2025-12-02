@@ -6,7 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
-import '../ayuda/ayuda_screen.dart'; // <-- IMPORTAR LUZIA
+import '../ayuda/ayuda_screen.dart';
+import '../materias/materias_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,12 +19,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // Paginas del BottomNavigationBar
+  // Páginas del BottomNavigationBar
   final List<Widget> _pages = [
     const _DashboardPage(),
-    const _MateriasPage(),
-    const AyudaScreen(), // <-- USAR LUZIA EN LUGAR DEL PLACEHOLDER
-    const ProfileScreen(),
+    const MateriasListScreen(), // [TONO]
+    const AyudaScreen(), // [LULU]
+    const ProfileScreen(), // [SAM]
   ];
 
   @override
@@ -55,8 +56,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Materias',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.smart_toy_outlined),
-            activeIcon: Icon(Icons.smart_toy),
+            icon: Icon(Icons.help_outline),
+            activeIcon: Icon(Icons.help),
             label: 'Ayuda',
           ),
           BottomNavigationBarItem(
@@ -71,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================
-// PAGINA DE DASHBOARD
+// PÁGINA DE DASHBOARD (INICIO)
 // ============================================
 
 class _DashboardPage extends StatelessWidget {
@@ -79,12 +80,24 @@ class _DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inicio'),
         automaticallyImplyLeading: false,
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDark ? Icons.light_mode : Icons.dark_mode,
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
@@ -97,7 +110,6 @@ class _DashboardPage extends StatelessWidget {
               children: [
                 // Saludo
                 Card(
-                  color: isDark ? Colors.grey[850] : null,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
@@ -106,11 +118,11 @@ class _DashboardPage extends StatelessWidget {
                           radius: 30,
                           backgroundColor: AppTheme.primaryColor,
                           child: Text(
-                            usuario?.iniciales ?? 'U',
+                            usuario?.nombre.substring(0, 1).toUpperCase() ?? 'U',
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -120,18 +132,18 @@ class _DashboardPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Hola, ${usuario?.nombre ?? 'Usuario'}!',
-                                style: TextStyle(
+                                '¡Hola, ${usuario?.nombre ?? 'Usuario'}!',
+                                style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Bienvenido de vuelta',
                                 style: TextStyle(
-                                  color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
                                 ),
                               ),
                             ],
@@ -141,106 +153,125 @@ class _DashboardPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
 
-                // Estadisticas
-                Text(
-                  'Tu Progreso',
+                const SizedBox(height: 24),
+
+                // Accesos rápidos
+                const Text(
+                  'Accesos Rápidos',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
+                const SizedBox(height: 16),
+                
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.3,
                   children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        isDark: isDark,
-                        icon: Icons.code,
-                        title: 'Ejercicios',
-                        value: '0',
-                        color: AppTheme.primaryColor,
-                      ),
+                    _QuickAccessCard(
+                      icon: Icons.book,
+                      title: 'Mis Materias',
+                      color: AppTheme.primaryColor,
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        if (homeState != null) {
+                          homeState.setState(() {
+                            homeState._currentIndex = 1;
+                          });
+                        }
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        isDark: isDark,
-                        icon: Icons.quiz,
-                        title: 'Quizzes',
-                        value: '0',
-                        color: AppTheme.accentColor,
-                      ),
+                    _QuickAccessCard(
+                      icon: Icons.help_outline,
+                      title: 'Ayuda IA',
+                      color: AppTheme.accentColor,
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        if (homeState != null) {
+                          homeState.setState(() {
+                            homeState._currentIndex = 2;
+                          });
+                        }
+                      },
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        isDark: isDark,
-                        icon: Icons.star,
-                        title: 'Promedio',
-                        value: '0.0',
-                        color: Colors.purple,
-                      ),
+                    _QuickAccessCard(
+                      icon: Icons.code,
+                      title: 'Ejercicios',
+                      color: AppTheme.secondaryColor,
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        if (homeState != null) {
+                          homeState.setState(() {
+                            homeState._currentIndex = 1;
+                          });
+                        }
+                      },
+                    ),
+                    _QuickAccessCard(
+                      icon: Icons.quiz,
+                      title: 'Quizzes',
+                      color: Colors.purple,
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        if (homeState != null) {
+                          homeState.setState(() {
+                            homeState._currentIndex = 1;
+                          });
+                        }
+                      },
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 24),
 
-                // Acciones rapidas
-                Text(
-                  'Acciones Rapidas',
+                // Actividad reciente
+                const Text(
+                  'Actividad Reciente',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 12),
-                _buildActionCard(
-                  context,
-                  isDark: isDark,
-                  icon: Icons.play_arrow,
-                  title: 'Continuar aprendiendo',
-                  subtitle: 'Retoma donde lo dejaste',
-                  color: AppTheme.primaryColor,
-                  onTap: () {
-                    // TODO: Implementar navegacion a ultima materia
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildActionCard(
-                  context,
-                  isDark: isDark,
-                  icon: Icons.school,
-                  title: 'Ver mis materias',
-                  subtitle: 'Revisa tu progreso en cada materia',
-                  color: AppTheme.secondaryColor,
-                  onTap: () {
-                    // TODO: Navegar a materias
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildActionCard(
-                  context,
-                  isDark: isDark,
-                  icon: Icons.smart_toy,
-                  title: 'Pedir ayuda a LUZIA',
-                  subtitle: 'El asistente de IA esta disponible',
-                  color: AppTheme.accentColor,
-                  onTap: () {
-                    // Navegar a la pestaña de LUZIA
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    if (homeState != null) {
-                      homeState.setState(() {
-                        homeState._currentIndex = 2; // Indice de LUZIA
-                      });
-                    }
-                  },
+                const SizedBox(height: 16),
+                
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _ActivityItem(
+                          icon: Icons.check_circle_outline,
+                          title: 'Ejercicio completado',
+                          subtitle: 'Variables y tipos de datos',
+                          time: 'Hace 2 horas',
+                          color: Colors.green,
+                        ),
+                        const Divider(),
+                        _ActivityItem(
+                          icon: Icons.quiz_outlined,
+                          title: 'Quiz completado',
+                          subtitle: 'Condicionales',
+                          time: 'Hace 5 horas',
+                          color: Colors.blue,
+                        ),
+                        const Divider(),
+                        _ActivityItem(
+                          icon: Icons.help_outline,
+                          title: 'Consulta IA',
+                          subtitle: '¿Qué es un bucle for?',
+                          time: 'Ayer',
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -249,140 +280,124 @@ class _DashboardPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatCard(
-    BuildContext context, {
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Card(
-      color: isDark ? Colors.grey[850] : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+// Widget de acceso rápido
+class _QuickAccessCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required bool isDark,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+  const _QuickAccessCard({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      color: isDark ? Colors.grey[850] : null,
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(isDark ? 0.2 : 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: isDark ? Colors.grey[400] : null,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: isDark ? Colors.grey[500] : null,
-        ),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-// ============================================
-// PAGINA DE MATERIAS (Placeholder para Tono)
-// ============================================
+// Widget de item de actividad
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String time;
+  final Color color;
 
-class _MateriasPage extends StatelessWidget {
-  const _MateriasPage();
+  const _ActivityItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis Materias'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.book_outlined,
-              size: 80,
-              color: isDark ? Colors.grey[600] : Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Materias',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Aqui se mostraran tus materias\n(Modulo de TONO)',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
-          ],
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: color,
+          ),
         ),
-      ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          time,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[500],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -106,23 +106,23 @@ class EjercicioModel {
     int? puntosMaximos,
     bool? resuelto,
     int? intentos,
-}) {
+  }) {
     return EjercicioModel(
-    id: id ?? this.id,
-    subtemaId: subtemaId ?? this.subtemaId,
-    enunciado: enunciado ?? this.enunciado,
-    dificultad: dificultad ?? this.dificultad,
-    codigoBase: codigoBase ?? this.codigoBase,
-    tipoEjercicio: tipoEjercicio ?? this.tipoEjercicio,
-    lenguajeProgramacion: lenguajeProgramacion ?? this.lenguajeProgramacion,
-    puntosMaximos: puntosMaximos ?? this.puntosMaximos,
-    resuelto: resuelto ?? this.resuelto,
-    intentos: intentos ?? this.intentos,
+      id: id ?? this.id,
+      subtemaId: subtemaId ?? this.subtemaId,
+      enunciado: enunciado ?? this.enunciado,
+      dificultad: dificultad ?? this.dificultad,
+      codigoBase: codigoBase ?? this.codigoBase,
+      tipoEjercicio: tipoEjercicio ?? this.tipoEjercicio,
+      lenguajeProgramacion: lenguajeProgramacion ?? this.lenguajeProgramacion,
+      puntosMaximos: puntosMaximos ?? this.puntosMaximos,
+      resuelto: resuelto ?? this.resuelto,
+      intentos: intentos ?? this.intentos,
     );
-}
+  }
 
-@override
-String toString() {
+  @override
+  String toString() {
     return 'EjercicioModel(id: $id, enunciado: $enunciadoResumido, dificultad: $dificultad)';
-}
+  }
 }
