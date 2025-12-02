@@ -1,5 +1,4 @@
 // lib/screens/home/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -7,6 +6,10 @@ import '../../providers/theme_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
 import '../ayuda/ayuda_screen.dart'; // <-- IMPORTAR LUZIA
+
+// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS DE TOÑO
+import '../materias/materias_list_screen.dart';
+import '../materias/mis_materias_screen.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

@@ -9,6 +9,11 @@ import 'providers/gemini_provider.dart';
 import 'services/storage_service.dart';
 import 'screens/splash_screen.dart';
 
+// 🆕 IMPORTA TUS PROVIDERS DE TOÑO
+import 'providers/materia_provider.dart';
+import 'providers/contenido_provider.dart';
+import 'providers/progreso_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
