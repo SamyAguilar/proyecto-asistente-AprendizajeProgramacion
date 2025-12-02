@@ -6,7 +6,8 @@ class AppConstants {
   // ============================================
 
   // Para desarrollo local con emulador Android
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  // Para desarrollo local con emulador Android
+static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
   //'http://172.16.30.42:3000';
 
   // Para desarrollo local con iOS simulator, usa:
