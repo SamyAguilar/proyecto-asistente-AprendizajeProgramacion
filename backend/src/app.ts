@@ -44,7 +44,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: ['postgresql://postgress:FwIJbfUwCGecVaxYGlLAJ3i1pjl6ulBJ@dpg-d4oatqqdbo4c73ev0m70-a/asistente_programacion'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
