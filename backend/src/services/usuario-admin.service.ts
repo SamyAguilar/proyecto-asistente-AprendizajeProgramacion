@@ -106,13 +106,14 @@ export class UsuarioAdminService {
     const materia = materiaResult[0];
 
     // Obtener estudiantes y su progreso
+    // CORRECCIÓN: Se cambió 'fecha_matricula' por 'fecha_inicio'
     const estudiantesQuery = `
       SELECT 
         u.id,
         u.nombre,
         u.apellido,
         u.email,
-        mat.fecha_matricula,
+        mat.fecha_inicio as fecha_matricula, 
         COALESCE(
           (
             SELECT ROUND(
@@ -136,7 +137,7 @@ export class UsuarioAdminService {
       FROM usuarios u
       INNER JOIN matriculas mat ON mat.usuario_id = u.id
       WHERE mat.materia_id = $1
-      ORDER BY mat.fecha_matricula DESC
+      ORDER BY mat.fecha_inicio DESC
     `;
 
     const estudiantes = await AppDataSource.query(estudiantesQuery, [materiaId]);
@@ -151,7 +152,7 @@ export class UsuarioAdminService {
         apellido: e.apellido,
         email: e.email,
         progresoMateria: parseFloat(e.progreso_materia) || 0,
-        fechaMatricula: e.fecha_matricula
+        fechaMatricula: e.fecha_matricula // Ahora coincide con el alias del SELECT
       }))
     };
   }
