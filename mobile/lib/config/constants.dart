@@ -7,8 +7,9 @@ class AppConstants {
 
   // Para desarrollo local con emulador Android
   // Para desarrollo local con emulador Android
-static const String baseUrl = 'http://10.129.33.113:3000/api/v1';
+  //static const String baseUrl = 'http://10.129.33.113:3000/api/v1';
   //'http://172.16.30.42:3000';
+  static const String baseUrl = 'http://192.168.0.188:3000';
 
   // Para desarrollo local con iOS simulator, usa:
   // static const String baseUrl = 'http://localhost:3000';
@@ -77,12 +78,28 @@ static const String baseUrl = 'http://10.129.33.113:3000/api/v1';
   static String quizResultadosUrl(int usuarioId) => '$apiUrl/quiz/resultados/$usuarioId';
 
   // ============================================
-  // ENDPOINTS DE GEMINI/IA
+  // ENDPOINTS DE GEMINI/IA (LULU)
   // ============================================
 
-  static String get procesarCodigoUrl => '$apiUrl/gemini/procesar-codigo';
+  /// POST /gemini/chat - Chat con LULU
+  static String get chatLuluUrl => '$apiUrl/gemini/chat';
+
+  /// POST /gemini/explicar-concepto - Explicar un concepto
+  static String get explicarConceptoUrl => '$apiUrl/gemini/explicar-concepto';
+
+  /// POST /gemini/generar-explicacion - Explicar codigo linea por linea
   static String get generarExplicacionUrl => '$apiUrl/gemini/generar-explicacion';
+
+  /// POST /gemini/validate-code - Validar/analizar codigo
+  static String get validateCodeUrl => '$apiUrl/gemini/validate-code';
+
+  /// POST /gemini/procesar-codigo - Procesar codigo (legacy)
+  static String get procesarCodigoUrl => '$apiUrl/gemini/procesar-codigo';
+
+  /// GET /retroalimentacion/:usuarioId - Obtener retroalimentaciones
   static String retroalimentacionUrl(int usuarioId) => '$apiUrl/retroalimentacion/$usuarioId';
+
+  /// POST /retroalimentacion/generar - Generar retroalimentacion
   static String get generarRetroalimentacionUrl => '$apiUrl/retroalimentacion/generar';
 
   // ============================================
@@ -110,6 +127,19 @@ static const String baseUrl = 'http://10.129.33.113:3000/api/v1';
   static const int receiveTimeout = 30;
   static const int sendTimeout = 30;
 
+  /// Timeout especial para llamadas a Gemini (mas largo)
+  static const int geminiTimeout = 60;
+
+  // ============================================
+  // CONFIGURACION DE LULU
+  // ============================================
+
+  /// Maximo de mensajes en historial de chat
+  static const int maxHistorialChat = 50;
+
+  /// Maximo de caracteres en codigo para analizar
+  static const int maxCaracteresCodigo = 10000;
+
   // ============================================
   // MENSAJES DE ERROR
   // ============================================
@@ -118,6 +148,7 @@ static const String baseUrl = 'http://10.129.33.113:3000/api/v1';
   static const String errorConexion = 'Error de conexion. Verifica tu internet.';
   static const String errorAutenticacion = 'Sesion expirada. Por favor, inicia sesion nuevamente.';
   static const String errorServidor = 'Error del servidor. Intenta mas tarde.';
+  static const String errorLulu = 'Error al conectar con LULU. Intenta de nuevo.';
 
   // ============================================
   // VALIDACIONES

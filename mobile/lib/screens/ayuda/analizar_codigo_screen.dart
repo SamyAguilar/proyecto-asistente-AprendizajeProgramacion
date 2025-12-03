@@ -113,7 +113,7 @@ class _AnalizarCodigoScreenState extends State<AnalizarCodigoScreen> {
                   )
                 else if (gemini.error != null)
                   ErrorDisplayWidget(
-                    mensaje: gemini.error!,
+                    message: gemini.error!,
                     onRetry: () => _analizarCodigo(gemini),
                   )
                 else if (_mostrarResultado && gemini.ultimoAnalisis != null)
