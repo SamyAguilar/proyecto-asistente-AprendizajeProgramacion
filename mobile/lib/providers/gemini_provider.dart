@@ -107,7 +107,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return null;
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return null;
     } catch (e) {
@@ -177,7 +177,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return null;
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return null;
     } catch (e) {
@@ -230,7 +230,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return null;
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return null;
     } catch (e) {
@@ -289,7 +289,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return null;
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return null;
     } catch (e) {
@@ -343,7 +343,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return [];
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return [];
     } catch (e) {
@@ -392,7 +392,7 @@ class GeminiProvider extends ChangeNotifier {
       _setLoading(false);
       return null;
     } on HttpException catch (e) {
-      _setError(e.message);
+      _setError(e.mensaje);
       _setLoading(false);
       return null;
     } catch (e) {

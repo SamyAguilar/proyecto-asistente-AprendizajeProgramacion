@@ -1,12 +1,12 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/gemini_provider.dart'; // Mantener el provider de Lulu
 import 'services/storage_service.dart';
-import 'services/http_service.dart'; // Necesario para los nuevos providers
+import 'services/http_service.dart';
 import 'screens/splash_screen.dart';
 
 // 🆕 IMPORTA TUS PROVIDERS DE TOÑO
@@ -28,15 +28,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Se agregan los providers de Toño, inicializándolos con HttpService()
     return MultiProvider(
       providers: [
-        // Providers de Base
+        // Providers de Sam
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
-        ChangeNotifierProvider(create: (_) => GeminiProvider()), // Provider de Lulu
-
-        // 🆕 Providers del módulo de Materias (Toño)
+        
+        // 🆕 TUS PROVIDERS DE TOÑO
         ChangeNotifierProvider(
           create: (_) => MateriaProvider(HttpService()),
         ),

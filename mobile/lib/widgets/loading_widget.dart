@@ -8,13 +8,13 @@ import '../config/theme.dart';
 // ============================================
 
 class LoadingWidget extends StatelessWidget {
-  final String? message;
+  final String? mensaje;  // ← CAMBIADO: message → mensaje
   final Color? color;
   final double size;
 
   const LoadingWidget({
     super.key,
-    this.message,
+    this.mensaje,  // ← CAMBIADO
     this.color,
     this.size = 40,
   });
@@ -35,10 +35,10 @@ class LoadingWidget extends StatelessWidget {
               ),
             ),
           ),
-          if (message != null) ...[
+          if (mensaje != null) ...[  // ← CAMBIADO
             const SizedBox(height: 16),
             Text(
-              message!,
+              mensaje!,  // ← CAMBIADO
               style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondaryColor,
@@ -57,17 +57,17 @@ class LoadingWidget extends StatelessWidget {
 // ============================================
 
 class LoadingScreen extends StatelessWidget {
-  final String? message;
+  final String? mensaje;  // ← CAMBIADO
 
   const LoadingScreen({
     super.key,
-    this.message,
+    this.mensaje,  // ← CAMBIADO
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LoadingWidget(message: message),
+      body: LoadingWidget(mensaje: mensaje),  // ← CAMBIADO
     );
   }
 }
@@ -79,13 +79,13 @@ class LoadingScreen extends StatelessWidget {
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
-  final String? message;
+  final String? mensaje;  // ← CAMBIADO
 
   const LoadingOverlay({
     super.key,
     required this.isLoading,
     required this.child,
-    this.message,
+    this.mensaje,  // ← CAMBIADO
   });
 
   @override
@@ -97,7 +97,7 @@ class LoadingOverlay extends StatelessWidget {
           Container(
             color: Colors.black.withOpacity(0.3),
             child: LoadingWidget(
-              message: message,
+              mensaje: mensaje,  // ← CAMBIADO
               color: Colors.white,
             ),
           ),

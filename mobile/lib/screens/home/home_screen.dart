@@ -5,10 +5,9 @@ import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
 
-// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS
+// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS DE TOÑO
 import '../materias/materias_list_screen.dart';
-import '../materias/mis_materias_screen.dart'; // Importar MisMateriasScreen para la navegación
-import '../ayuda/ayuda_screen.dart'; // Asumiendo que AyudaScreen existe
+import '../materias/mis_materias_screen.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,18 +20,15 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   // ✅ PÁGINAS REALES DEL BOTTOM NAVIGATION BAR
-  final List<Widget> _pages = const [
-    _DashboardPage(), // 0 - Inicio
-    MateriasListScreen(), // 1 - Materias (Lista)
-    AyudaScreen(), // 2 - Ayuda (LUZIA)
-    ProfileScreen(), // 3 - Perfil
+  final List<Widget> _pages = [
+    const _DashboardPage(),
+    const MateriasListScreen(), // ✅ PANTALLA REAL DE MATERIAS
+    const _AyudaPage(),
+    const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // La variable isDark solo se usa para la interfaz de usuario.
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -58,8 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Materias',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.smart_toy_outlined),
-            activeIcon: Icon(Icons.smart_toy),
+            icon: Icon(Icons.help_outline),
+            activeIcon: Icon(Icons.help),
             label: 'Ayuda',
           ),
           BottomNavigationBarItem(
@@ -74,25 +70,197 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================
-// PAGINA DE DASHBOARD (Anidada)
-// Se cambió de StatelessWidget a un StatefulWidget para acceder al estado de _HomeScreenState
+// PÁGINA DE DASHBOARD
 // ============================================
 
 class _DashboardPage extends StatelessWidget {
   const _DashboardPage();
 
-  // Método auxiliar para crear las tarjetas de estadísticas
-  Widget _buildStatCard(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String value,
-        required Color color,
-      }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Inicio'),
+        automaticallyImplyLeading: false,
+      ),
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final usuario = auth.usuario;
 
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Saludo
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: AppTheme.primaryColor,
+                          child: Text(
+                            usuario?.iniciales ?? 'U',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '¡Hola, ${usuario?.nombre ?? 'Usuario'}!',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Bienvenido al asistente de programación',
+                                style: TextStyle(
+                                  color: AppTheme.textSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Estadísticas rápidas
+                const Text(
+                  'Tu Progreso',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.book,
+                        title: 'Materias',
+                        value: '0',
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.assignment_turned_in,
+                        title: 'Ejercicios',
+                        value: '0',
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.quiz,
+                        title: 'Quizzes',
+                        value: '0',
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.star,
+                        title: 'Promedio',
+                        value: '0.0',
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Acciones rápidas
+                const Text(
+                  'Acciones Rápidas',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildActionCard(
+                  icon: Icons.play_arrow,
+                  title: 'Continuar aprendiendo',
+                  subtitle: 'Retoma donde lo dejaste',
+                  color: AppTheme.primaryColor,
+                  onTap: () {
+                    // TODO: Implementar navegación a última materia
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Función pendiente: Continuar aprendiendo'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildActionCard(
+                  icon: Icons.school,
+                  title: 'Ver mis materias',
+                  subtitle: 'Revisa tu progreso en cada materia',
+                  color: AppTheme.secondaryColor,
+                  onTap: () {
+                    // ✅ NAVEGAR A MIS MATERIAS
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MisMateriasScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildActionCard(
+                  icon: Icons.help,
+                  title: 'Pedir ayuda',
+                  subtitle: 'El asistente de IA está disponible',
+                  color: AppTheme.accentColor,
+                  onTap: () {
+                    // TODO: Navegar a ayuda (Lulu)
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Función pendiente: Asistente IA (Lulu)'),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
     return Card(
-      color: isDark ? Colors.grey[850] : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -114,9 +282,9 @@ class _DashboardPage extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
+                color: AppTheme.textSecondaryColor,
               ),
             ),
           ],
@@ -125,24 +293,19 @@ class _DashboardPage extends StatelessWidget {
     );
   }
 
-  // Método auxiliar para crear las tarjetas de acciones rápidas
-  Widget _buildActionCard(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        required Color color,
-        required VoidCallback onTap,
-      }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Card(
-      color: isDark ? Colors.grey[850] : null,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(isDark ? 0.2 : 0.1),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -152,195 +315,58 @@ class _DashboardPage extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: isDark ? Colors.grey[400] : null,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: isDark ? Colors.grey[500] : null,
-        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );
   }
+}
+
+// ============================================
+// PÁGINA DE AYUDA (Placeholder para Lulu)
+// ============================================
+
+class _AyudaPage extends StatelessWidget {
+  const _AyudaPage();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inicio'),
+        title: const Text('Ayuda'),
         automaticallyImplyLeading: false,
       ),
-      body: Consumer<AuthProvider>(
-        builder: (context, auth, _) {
-          final usuario = auth.usuario;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Saludo
-                Card(
-                  color: isDark ? Colors.grey[850] : null,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: AppTheme.primaryColor,
-                          child: Text(
-                            usuario?.iniciales ?? 'U',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hola, ${usuario?.nombre ?? 'Usuario'}!',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Bienvenido de vuelta',
-                                style: TextStyle(
-                                  color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Estadisticas
-                Text(
-                  'Tu Progreso',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        icon: Icons.code,
-                        title: 'Ejercicios',
-                        value: '0',
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        icon: Icons.quiz,
-                        title: 'Quizzes',
-                        value: '0',
-                        color: AppTheme.accentColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        context,
-                        icon: Icons.star,
-                        title: 'Promedio',
-                        value: '0.0',
-                        color: Colors.purple,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Acciones rapidas
-                Text(
-                  'Acciones Rapidas',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildActionCard(
-                  context,
-                  icon: Icons.play_arrow,
-                  title: 'Continuar aprendiendo',
-                  subtitle: 'Retoma donde lo dejaste',
-                  color: AppTheme.primaryColor,
-                  onTap: () {
-                    // TODO: Implementar navegacion a ultima materia
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildActionCard(
-                  context,
-                  icon: Icons.school,
-                  title: 'Ver mis materias',
-                  subtitle: 'Revisa tu progreso en cada materia',
-                  color: AppTheme.secondaryColor,
-                  onTap: () {
-                    // Navegar a MisMateriasScreen (ejemplo de navegación a pantalla secundaria)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MisMateriasScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildActionCard(
-                  context,
-                  icon: Icons.smart_toy,
-                  title: 'Pedir ayuda a LUZIA',
-                  subtitle: 'El asistente de IA esta disponible',
-                  color: AppTheme.accentColor,
-                  onTap: () {
-                    // Navegar a la pestaña de LUZIA (índice 2)
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    if (homeState != null) {
-                      homeState.setState(() {
-                        homeState._currentIndex = 2;
-                      });
-                    }
-                  },
-                ),
-              ],
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.help_outline,
+              size: 64,
+              color: AppTheme.textSecondaryColor,
             ),
-          );
-        },
+            SizedBox(height: 16),
+            Text(
+              'Asistente de IA',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Próximamente - Implementar por Lulu',
+              style: TextStyle(
+                color: AppTheme.textSecondaryColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

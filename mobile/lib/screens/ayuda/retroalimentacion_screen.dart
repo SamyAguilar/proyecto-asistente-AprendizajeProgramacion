@@ -75,12 +75,12 @@ class _RetroalimentacionScreenState extends State<RetroalimentacionScreen> {
       body: Consumer<GeminiProvider>(
         builder: (context, gemini, _) {
           if (gemini.isLoading) {
-            return const LoadingWidget(message: 'Cargando retroalimentaciones...');
+            return const LoadingWidget(mensaje: 'Cargando retroalimentaciones...');
           }
 
           if (gemini.error != null) {
             return ErrorDisplayWidget(
-              message: gemini.error!,
+              mensaje: gemini.error!,
               onRetry: _cargarRetroalimentaciones,
             );
           }
