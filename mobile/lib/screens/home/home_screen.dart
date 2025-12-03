@@ -12,6 +12,7 @@ import '../materias/mis_materias_screen.dart';
 
 // NUEVO - Import de AyudaScreen (LUZIA)
 import '../ayuda/ayuda_screen.dart';
+import '../progreso/progreso_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     const _DashboardPage(),
     const MateriasListScreen(),
+    const ProgresoScreen(),
     const AyudaScreen(),  // Pantalla real de LUZIA
     const ProfileScreen(),
   ];
@@ -56,6 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.book_outlined),
             activeIcon: Icon(Icons.book),
             label: 'Materias',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up_outlined),
+            activeIcon: Icon(Icons.trending_up),
+            label: 'Progreso',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.smart_toy_outlined),

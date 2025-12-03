@@ -148,7 +148,6 @@ export class ProgresoService {
     usuarioId: number,
     temaId: number
   ): Promise<void> {
-    // Obtener total de ejercicios y quizzes del tema
     const statsQuery = `
       SELECT 
         COUNT(DISTINCT e.id) as total_ejercicios,
@@ -170,14 +169,19 @@ export class ProgresoService {
       return;
     }
 
-    const totalItems = parseInt(stats[0].total_ejercicios) + parseInt(stats[0].total_preguntas);
-    const completados = parseInt(stats[0].ejercicios_correctos) + parseInt(stats[0].preguntas_correctas);
+    const totalEjercicios = parseInt(stats[0].total_ejercicios);
+    const totalPreguntas = parseInt(stats[0].total_preguntas);
+    const ejerciciosCorrectos = parseInt(stats[0].ejercicios_correctos);
+    const preguntasCorrectas = parseInt(stats[0].preguntas_correctas);
+
+    const totalItems = totalEjercicios + totalPreguntas;
+    const totalCorrectos = ejerciciosCorrectos + preguntasCorrectas;
 
     if (totalItems === 0) {
       return;
     }
 
-    const porcentaje = Math.round((completados / totalItems) * 100);
+    const porcentaje = Math.round((totalCorrectos / totalItems) * 100);
     
     let estado: 'no_iniciado' | 'en_progreso' | 'completado';
     if (porcentaje === 0) {

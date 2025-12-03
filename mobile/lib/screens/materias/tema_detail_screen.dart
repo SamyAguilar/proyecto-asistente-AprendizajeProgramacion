@@ -30,6 +30,32 @@ class _TemaDetailScreenState extends State<TemaDetailScreen> {
     final progresoProvider = context.read<ProgresoProvider>();
 
     await contenidoProvider.listarSubtemasPorTema(widget.tema.id);
+
+    // Obtener subtemas
+    final subtemas = contenidoProvider.subtemas;
+
+    if (subtemas.isNotEmpty) {
+      // Calcular progreso basado en subtemas
+      int totalSubtemas = subtemas.length;
+      int subtemaCompletados = 0;
+
+      for (var subtema in subtemas) {
+        // Aquí deberías tener una lógica para verificar si un subtema está completado
+        // Por ejemplo, verificar si todos los ejercicios están resueltos
+        final intentosEjercicio = await progresoProvider.obtenerIntentosSubtema(subtema.id);
+        if (intentosEjercicio.isNotEmpty) {
+          subtemaCompletados++;
+        }
+      }
+
+      // Calcular porcentaje de progreso
+      double porcentajeProgreso = (subtemaCompletados / totalSubtemas) * 100;
+
+      // Actualizar progreso del tema
+      await progresoProvider.actualizarProgresoTema(widget.tema.id, porcentajeProgreso);
+    }
+
+    // Obtener progreso actualizado
     await progresoProvider.obtenerProgresoTema(widget.tema.id);
   }
 

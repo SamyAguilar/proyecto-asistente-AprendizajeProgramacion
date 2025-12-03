@@ -3,6 +3,7 @@ import '../../models/subtema_model.dart';
 // NUEVO - Imports para navegacion a PANCHO
 import '../ejercicios/ejercicios_list_screen.dart';
 import '../quiz/quiz_intro_screen.dart';
+import '../progreso/progreso_screen.dart';
 
 class SubtemaDetailScreen extends StatelessWidget {
   final SubtemaModel subtema;
@@ -154,16 +155,14 @@ class SubtemaDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Boton Ver Progreso (opcional)
+                  // Boton Ver Progreso
                   OutlinedButton.icon(
                     onPressed: () {
-                      // Mostrar progreso del subtema
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Progreso del subtema: ${subtema.nombre}',
-                          ),
-                          backgroundColor: Colors.green,
+                      // Navegar a la pantalla de progreso
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ProgresoScreen(),
                         ),
                       );
                     },
