@@ -22,10 +22,19 @@ export class EjercicioController {
   /**
    * GET /api/v1/ejercicios/subtema/:subtemaId
    * Listar todos los ejercicios de un subtema
+   * AHORA INCLUYE el estado "resuelto" por usuario
    */
   listarEjerciciosPorSubtema = async (req: Request, res: Response): Promise<void> => {
     try {
+      const usuarioId = (req as any).userId; // ⬅️ OBTENER usuarioId
       const subtemaId = parseInt(req.params.subtemaId);
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
 
       if (isNaN(subtemaId)) {
         res.status(400).json({
@@ -34,7 +43,8 @@ export class EjercicioController {
         return;
       }
 
-      const ejercicios = await this.ejercicioService.listarEjerciciosPorSubtema(subtemaId);
+      // ⬅️ PASAR usuarioId al servicio para calcular resuelto
+      const ejercicios = await this.ejercicioService.listarEjerciciosPorSubtema(subtemaId, usuarioId);
 
       res.status(200).json({
         success: true,
@@ -56,7 +66,15 @@ export class EjercicioController {
    */
   obtenerEjercicioPorId = async (req: Request, res: Response): Promise<void> => {
     try {
+      const usuarioId = (req as any).userId; // ⬅️ OBTENER usuarioId
       const ejercicioId = parseInt(req.params.id);
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
 
       if (isNaN(ejercicioId)) {
         res.status(400).json({
@@ -65,7 +83,8 @@ export class EjercicioController {
         return;
       }
 
-      const ejercicio = await this.ejercicioService.obtenerEjercicioPorId(ejercicioId);
+      // ⬅️ PASAR usuarioId al servicio
+      const ejercicio = await this.ejercicioService.obtenerEjercicioPorId(ejercicioId, usuarioId); 
 
       res.status(200).json({
         success: true,
@@ -94,9 +113,11 @@ export class EjercicioController {
    */
   enviarEjercicio = async (req: Request, res: Response): Promise<void> => {
     try {
-      const usuarioId = (req as any).userId;
+      // Se asume que el ID del usuario está en el token, adjunto por authMiddleware
+      const usuarioId = (req as any).userId; 
       const ejercicioId = parseInt(req.params.id);
-      const { codigoEnviado } = req.body;
+      // FIX: Leer el body completo como el DTO de envío
+      const datosEnvio = req.body; 
 
       if (!usuarioId) {
         res.status(401).json({
@@ -112,9 +133,10 @@ export class EjercicioController {
         return;
       }
 
-      if (!codigoEnviado) {
+      // Validación de existencia de AL MENOS un campo de solución.
+      if (!datosEnvio.codigoEnviado && !datosEnvio.opcionSeleccionadaId && !datosEnvio.respuestasCompletadas) {
         res.status(400).json({
-          error: 'Campo requerido: codigoEnviado'
+          error: 'Debe enviar un campo de solución: codigoEnviado, opcionSeleccionadaId o respuestasCompletadas.'
         });
         return;
       }
@@ -122,7 +144,7 @@ export class EjercicioController {
       const resultado = await this.ejercicioService.enviarEjercicio(
         ejercicioId,
         usuarioId,
-        { codigoEnviado }
+        datosEnvio 
       );
 
       res.status(200).json({
@@ -135,20 +157,29 @@ export class EjercicioController {
     } catch (error: any) {
       logError('Error al enviar ejercicio:', error);
 
+      // Manejo de errores de negocio lanzados por el servicio (código 400 o 403/404)
       if (error.message.includes('matriculado')) {
-        res.status(403).json({
+        res.status(403).json({ // No tiene permiso
           error: error.message
         });
         return;
       }
-
-      if (error.message === 'Ejercicio no encontrado') {
-        res.status(404).json({
-          error: 'Ejercicio no encontrado'
+      
+      if (error.message.includes('no encontrado')) {
+        res.status(404).json({ // Recurso no existe
+          error: error.message
         });
         return;
       }
-
+      
+      // Captura de errores de validación de campos del servicio (e.g., 'Se requiere seleccionar una opción')
+      if (error.message.includes('requiere') || error.message.includes('configurada') || error.message.includes('válida')) {
+          res.status(400).json({ 
+            error: error.message 
+          });
+          return;
+      }
+      
       res.status(500).json({
         error: 'Error interno al enviar ejercicio',
         mensaje: error.message

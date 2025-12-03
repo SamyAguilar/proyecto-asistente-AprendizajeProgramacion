@@ -22,6 +22,7 @@ export interface EjercicioDto {
   opcionesRespuesta?: any[];
   textoConEspacios?: string;
   totalIntentos?: number;
+  resuelto?: boolean;
 }
 
 export interface EnviarEjercicioDto {
@@ -71,56 +72,64 @@ export class EjercicioService {
 
   /**
    * Listar todos los ejercicios de un subtema
-   * NO incluye código solución ni respuestas correctas
+   * INCLUYE campo resuelto calculado por usuario
    */
-  async listarEjerciciosPorSubtema(subtemaId: number): Promise<EjercicioDto[]> {
-    const ejercicios = await this.ejercicioRepository
-      .createQueryBuilder('ejercicio')
-      .leftJoin('ejercicio.intentos', 'intento')
-      .where('ejercicio.subtemaId = :subtemaId', { subtemaId })
-      .select([
-        'ejercicio.id',
-        'ejercicio.subtemaId',
-        'ejercicio.enunciado',
-        'ejercicio.dificultad',
-        'ejercicio.tipoEjercicio',
-        'ejercicio.puntosMaximos',
-        'ejercicio.lenguajeProgramacion',
-        'ejercicio.codigoBase',
-        'ejercicio.opcionesRespuesta',
-        'ejercicio.textoConEspacios'
-      ])
-      .addSelect('COUNT(intento.id)', 'totalIntentos')
-      .groupBy('ejercicio.id')
-      .getRawMany();
+  async listarEjerciciosPorSubtema(subtemaId: number, usuarioId: number): Promise<EjercicioDto[]> {
+    // Obtener ejercicios
+    const ejercicios = await this.ejercicioRepository.find({
+      where: { subtemaId },
+      order: { id: 'ASC' }
+    });
 
-    return ejercicios.map(ej => ({
-      id: ej.ejercicio_id,
-      subtemaId: ej.ejercicio_subtema_id,
-      enunciado: ej.ejercicio_enunciado,
-      dificultad: ej.ejercicio_dificultad || 'basica',
-      tipoEjercicio: ej.ejercicio_tipo_ejercicio || 'codificacion',
-      puntosMaximos: ej.ejercicio_puntos_maximos || 10,
-      lenguajeProgramacion: ej.ejercicio_lenguaje_programacion,
-      codigoBase: ej.ejercicio_codigo_base || '',
-      // Para ejercicios múltiple, filtrar las respuestas correctas
-      opcionesRespuesta: ej.ejercicio_opciones_respuesta 
-        ? ej.ejercicio_opciones_respuesta.map((op: any) => ({
-            id: op.id,
-            texto: op.texto
-            // NO enviamos esCorrecta
-          }))
-        : undefined,
-      textoConEspacios: ej.ejercicio_texto_con_espacios,
-      totalIntentos: parseInt(ej.totalIntentos) || 0
-    }));
+    // Calcular estado de resolución para cada ejercicio
+    const ejerciciosConEstado = await Promise.all(
+      ejercicios.map(async (ejercicio) => {
+        // Obtener intentos del usuario para este ejercicio
+        const intentos = await this.intentoRepository.find({
+          where: {
+            ejercicioId: ejercicio.id,
+            usuarioId
+          },
+          order: { timestamp: 'DESC' }
+        });
+
+        const totalIntentos = intentos.length;
+        
+        // ⚠️ FIX CLAVE: Un ejercicio está resuelto si tiene al menos un intento con puntaje máximo
+        const resuelto = intentos.some(i => i.puntosObtenidos === ejercicio.puntosMaximos);
+
+        return {
+          id: ejercicio.id,
+          subtemaId: ejercicio.subtemaId,
+          enunciado: ejercicio.enunciado,
+          dificultad: ejercicio.dificultad || 'basica',
+          tipoEjercicio: ejercicio.tipoEjercicio || 'codificacion',
+          puntosMaximos: ejercicio.puntosMaximos || 10,
+          lenguajeProgramacion: ejercicio.lenguajeProgramacion,
+          codigoBase: ejercicio.codigoBase || '',
+          // Para ejercicios múltiple, filtrar las respuestas correctas
+          opcionesRespuesta: ejercicio.opcionesRespuesta 
+            ? ejercicio.opcionesRespuesta.map((op: any) => ({
+                id: op.id,
+                texto: op.texto
+                // NO enviamos esCorrecta
+              }))
+            : undefined,
+          textoConEspacios: ejercicio.textoConEspacios,
+          totalIntentos,
+          resuelto // ⬅️ INCLUIR resuelto en el listado
+        };
+      })
+    );
+
+    return ejerciciosConEstado;
   }
 
   /**
    * Obtener detalle de un ejercicio específico
-   * NO incluye código solución ni respuestas correctas
+   * Incluye estado de resolución para el usuario actual
    */
-  async obtenerEjercicioPorId(ejercicioId: number): Promise<EjercicioDto> {
+  async obtenerEjercicioPorId(ejercicioId: number, usuarioId: number): Promise<EjercicioDto> {
     const ejercicio = await this.ejercicioRepository
       .createQueryBuilder('ejercicio')
       .leftJoinAndSelect('ejercicio.subtema', 'subtema')
@@ -131,6 +140,16 @@ export class EjercicioService {
     if (!ejercicio) {
       throw new Error('Ejercicio no encontrado');
     }
+    
+    // ⚠️ FIX CLAVE: Obtener intentos del usuario para calcular el estado de resolución
+    const intentos = await this.intentoRepository.find({
+      where: { ejercicioId, usuarioId },
+      order: { timestamp: 'DESC' },
+    });
+
+    const totalIntentos = intentos.length;
+    // Un ejercicio está resuelto si hay al menos un intento con puntaje máximo.
+    const resuelto = intentos.some(i => i.puntosObtenidos === ejercicio.puntosMaximos);
 
     return {
       id: ejercicio.id,
@@ -147,7 +166,9 @@ export class EjercicioService {
             texto: op.texto
           }))
         : undefined,
-      textoConEspacios: ejercicio.textoConEspacios
+      textoConEspacios: ejercicio.textoConEspacios,
+      totalIntentos,
+      resuelto, // ⬅️ Incluir resuelto en la respuesta
     };
   }
 
@@ -204,15 +225,14 @@ export class EjercicioService {
         throw new Error('Tipo de ejercicio no soportado');
     }
 
-    // 4. Actualizar progreso solo si es correcto
+    // 4. ⚠️ FIX CLAVE: Actualizar progreso usando el método inteligente
+    // que calcula el porcentaje basado en TODOS los ejercicios del tema
     if (resultado.resultado === 'correcto') {
       try {
-        await this.progresoService.actualizarProgreso(usuarioId, {
-          temaId: ejercicio.subtema.tema.id,
-          subtemaId: ejercicio.subtemaId,
-          estado: 'completado',
-          porcentajeCompletado: 100
-        });
+        await this.progresoService.calcularYActualizarProgresoTema(
+          usuarioId,
+          ejercicio.subtema.tema.id
+        );
         resultado.progresoActualizado = true;
       } catch (error) {
         console.error('Error al actualizar progreso:', error);

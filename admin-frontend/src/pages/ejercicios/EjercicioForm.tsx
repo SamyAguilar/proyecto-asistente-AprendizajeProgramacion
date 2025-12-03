@@ -467,7 +467,7 @@ export const EjercicioForm = () => {
 
                 <Button
                   startIcon={<Add />}
-                  onClick={() => appendRespuesta('')}
+                  onClick={() => appendRespuesta()}
                   variant="outlined"
                 >
                   Agregar Respuesta

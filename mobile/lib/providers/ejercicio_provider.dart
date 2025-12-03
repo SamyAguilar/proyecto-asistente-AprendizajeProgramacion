@@ -14,7 +14,7 @@ class EjercicioProvider extends ChangeNotifier {
   EjercicioModel? _ejercicioSeleccionado;
   List<IntentoEjercicioModel> _intentos = [];
   IntentoEjercicioModel? _ultimoIntento;
-  
+
   bool _isLoading = false;
   bool _isSubmitting = false;
   String? _error;
@@ -70,7 +70,7 @@ class EjercicioProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         List<dynamic> ejerciciosData;
         if (data is List) {
           ejerciciosData = data;
@@ -85,7 +85,7 @@ class EjercicioProvider extends ChangeNotifier {
         _ejercicios = ejerciciosData
             .map((e) => EjercicioModel.fromJson(e))
             .toList();
-        
+
         notifyListeners();
       }
     } on HttpException catch (e) {
@@ -112,13 +112,13 @@ class EjercicioProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         if (data['data'] != null) {
           _ejercicioSeleccionado = EjercicioModel.fromJson(data['data']);
         } else {
           _ejercicioSeleccionado = EjercicioModel.fromJson(data);
         }
-        
+
         notifyListeners();
       }
     } on HttpException catch (e) {
@@ -131,10 +131,12 @@ class EjercicioProvider extends ChangeNotifier {
   }
 
   // ============================================
-  // ENVIAR SOLUCIÓN DE EJERCICIO
+  // ENVIAR SOLUCIÓN DE EJERCICIO (MODIFICADO)
   // ============================================
 
-  Future<IntentoEjercicioModel?> enviarEjercicio(int id, String codigoEnviado) async {
+  // FIX CLAVE: La firma del método debe aceptar un Map (payload) para enviar
+  // el DTO correcto (opcionSeleccionadaId o codigoEnviado) al backend.
+  Future<IntentoEjercicioModel?> enviarEjercicio(int id, Map<String, dynamic> payload) async {
     _isSubmitting = true;
     _clearError();
     notifyListeners();
@@ -142,26 +144,24 @@ class EjercicioProvider extends ChangeNotifier {
     try {
       final response = await _httpService.post(
         AppConstants.enviarEjercicioUrl(id),
-        data: {
-          'codigoEnviado': codigoEnviado,
-        },
+        data: payload, // <--- Ahora envía el payload DTO correcto (FIX)
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        
+
         IntentoEjercicioModel intento;
         if (data['data'] != null) {
           intento = IntentoEjercicioModel.fromJson(data['data']);
         } else {
           intento = IntentoEjercicioModel.fromJson(data);
         }
-        
+
         _ultimoIntento = intento;
-        
+
         // Agregar al inicio de la lista de intentos
         _intentos.insert(0, intento);
-        
+
         // Actualizar estado del ejercicio en la lista
         final index = _ejercicios.indexWhere((e) => e.id == id);
         if (index != -1) {
@@ -170,12 +170,13 @@ class EjercicioProvider extends ChangeNotifier {
             intentos: (_ejercicios[index].intentos ?? 0) + 1,
           );
         }
-        
+
         _isSubmitting = false;
         notifyListeners();
         return intento;
       }
     } on HttpException catch (e) {
+      // ⚠️ El error 400 (Bad Request) del backend se captura aquí.
       _setError(e.mensaje);
     } catch (e) {
       _setError('Error al enviar ejercicio: ${e.toString()}');
@@ -201,7 +202,7 @@ class EjercicioProvider extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         List<dynamic> intentosData;
         if (data is List) {
           intentosData = data;
@@ -216,14 +217,14 @@ class EjercicioProvider extends ChangeNotifier {
         _intentos = intentosData
             .map((i) => IntentoEjercicioModel.fromJson(i))
             .toList();
-        
+
         // Ordenar por fecha más reciente
         _intentos.sort((a, b) {
           if (a.timestampEnvio == null) return 1;
           if (b.timestampEnvio == null) return -1;
           return b.timestampEnvio!.compareTo(a.timestampEnvio!);
         });
-        
+
         notifyListeners();
       }
     } on HttpException catch (e) {

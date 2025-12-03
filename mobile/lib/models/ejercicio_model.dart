@@ -12,6 +12,11 @@ class EjercicioModel {
   final bool? resuelto; // Indica si el usuario ya lo resolvió
   final int? intentos; // Cantidad de intentos del usuario
 
+  // NUEVOS CAMPOS AGREGADOS para ejercicios no-código
+  final List<Map<String, dynamic>>? opcionesRespuesta;
+  final String? textoConEspacios;
+  final List<String>? respuestasCorrectas;
+
   EjercicioModel({
     required this.id,
     required this.subtemaId,
@@ -23,6 +28,10 @@ class EjercicioModel {
     this.puntosMaximos = 10,
     this.resuelto,
     this.intentos,
+    // Inicialización de nuevos campos
+    this.opcionesRespuesta,
+    this.textoConEspacios,
+    this.respuestasCorrectas,
   });
 
   // Getters útiles
@@ -64,17 +73,48 @@ class EjercicioModel {
 
   // Crear desde JSON
   factory EjercicioModel.fromJson(Map<String, dynamic> json) {
+
+    // FIX DE ROBUSTEZ: Helper para asegurar que el booleano se parsee correctamente
+    bool? parseBool(dynamic value) {
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      if (value is String) return value.toLowerCase() == 'true';
+      return null;
+    }
+
+    // Helper para parsear la lista de respuestas correctas (String[])
+    List<String>? parseRespuestas(dynamic list) {
+      if (list is List) {
+        return list.whereType<String>().toList();
+      }
+      return null;
+    }
+
+    // Helper para parsear las opciones de respuesta (Array de objetos JSON)
+    List<Map<String, dynamic>>? parseOpciones(dynamic list) {
+      if (list is List) {
+        return list
+            .whereType<Map<String, dynamic>>()
+            .toList();
+      }
+      return null;
+    }
+
     return EjercicioModel(
       id: json['id'] ?? 0,
       subtemaId: json['subtemaId'] ?? json['subtema_id'] ?? 0,
       enunciado: json['enunciado'] ?? '',
       dificultad: json['dificultad'] ?? 'intermedio',
       codigoBase: json['codigoBase'] ?? json['codigo_base'],
-      tipoEjercicio: json['tipoEjercicio'] ?? json['tipo_ejercicio'] ?? 'codigo_abierto',
+      tipoEjercicio: json['tipoEjercicio'] ?? json['tipo_ejercicio'] ?? 'codificacion',
       lenguajeProgramacion: json['lenguajeProgramacion'] ?? json['lenguaje_programacion'],
       puntosMaximos: json['puntosMaximos'] ?? json['puntos_maximos'] ?? 10,
-      resuelto: json['resuelto'],
+      resuelto: parseBool(json['resuelto']), // ⬅️ FIX APLICADO AQUÍ
       intentos: json['intentos'],
+      // PARSEO DE NUEVOS CAMPOS
+      opcionesRespuesta: parseOpciones(json['opcionesRespuesta'] ?? json['opciones_respuesta']),
+      textoConEspacios: json['textoConEspacios'] ?? json['texto_con_espacios'],
+      respuestasCorrectas: parseRespuestas(json['respuestasCorrectas'] ?? json['respuestas_correctas']),
     );
   }
 
@@ -91,6 +131,10 @@ class EjercicioModel {
       'puntosMaximos': puntosMaximos,
       'resuelto': resuelto,
       'intentos': intentos,
+      // NUEVOS CAMPOS
+      'opcionesRespuesta': opcionesRespuesta,
+      'textoConEspacios': textoConEspacios,
+      'respuestasCorrectas': respuestasCorrectas,
     };
   }
 
@@ -106,6 +150,10 @@ class EjercicioModel {
     int? puntosMaximos,
     bool? resuelto,
     int? intentos,
+    // Nuevos campos en copyWith
+    List<Map<String, dynamic>>? opcionesRespuesta,
+    String? textoConEspacios,
+    List<String>? respuestasCorrectas,
   }) {
     return EjercicioModel(
       id: id ?? this.id,
@@ -118,6 +166,10 @@ class EjercicioModel {
       puntosMaximos: puntosMaximos ?? this.puntosMaximos,
       resuelto: resuelto ?? this.resuelto,
       intentos: intentos ?? this.intentos,
+      // Copiar nuevos campos
+      opcionesRespuesta: opcionesRespuesta ?? this.opcionesRespuesta,
+      textoConEspacios: textoConEspacios ?? this.textoConEspacios,
+      respuestasCorrectas: respuestasCorrectas ?? this.respuestasCorrectas,
     );
   }
 
@@ -126,3 +178,5 @@ class EjercicioModel {
     return 'EjercicioModel(id: $id, enunciado: $enunciadoResumido, dificultad: $dificultad)';
   }
 }
+
+
