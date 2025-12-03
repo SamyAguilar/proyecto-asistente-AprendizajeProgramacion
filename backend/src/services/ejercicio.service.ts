@@ -17,13 +17,17 @@ export interface EjercicioDto {
   dificultad: string;
   tipoEjercicio: string;
   puntosMaximos: number;
-  lenguajeProgramacion: string;
+  lenguajeProgramacion?: string;
   codigoBase?: string;
+  opcionesRespuesta?: any[];
+  textoConEspacios?: string;
   totalIntentos?: number;
 }
 
 export interface EnviarEjercicioDto {
-  codigoEnviado: string;
+  codigoEnviado?: string; // Para codificación
+  opcionSeleccionadaId?: string; // Para múltiple
+  respuestasCompletadas?: string[]; // Para completar
 }
 
 export interface ResultadoEnvioDto {
@@ -32,6 +36,7 @@ export interface ResultadoEnvioDto {
   retroalimentacionLlm: string;
   intentoId: number;
   progresoActualizado: boolean;
+  detalles?: any;
 }
 
 export interface IntentoDto {
@@ -66,7 +71,7 @@ export class EjercicioService {
 
   /**
    * Listar todos los ejercicios de un subtema
-   * Endpoint: GET /api/v1/ejercicios/subtema/:subtemaId
+   * NO incluye código solución ni respuestas correctas
    */
   async listarEjerciciosPorSubtema(subtemaId: number): Promise<EjercicioDto[]> {
     const ejercicios = await this.ejercicioRepository
@@ -81,28 +86,39 @@ export class EjercicioService {
         'ejercicio.tipoEjercicio',
         'ejercicio.puntosMaximos',
         'ejercicio.lenguajeProgramacion',
-        'ejercicio.codigoBase'
+        'ejercicio.codigoBase',
+        'ejercicio.opcionesRespuesta',
+        'ejercicio.textoConEspacios'
       ])
       .addSelect('COUNT(intento.id)', 'totalIntentos')
       .groupBy('ejercicio.id')
       .getRawMany();
 
-      return ejercicios.map(ej => ({
+    return ejercicios.map(ej => ({
       id: ej.ejercicio_id,
       subtemaId: ej.ejercicio_subtema_id,
       enunciado: ej.ejercicio_enunciado,
       dificultad: ej.ejercicio_dificultad || 'basica',
       tipoEjercicio: ej.ejercicio_tipo_ejercicio || 'codificacion',
       puntosMaximos: ej.ejercicio_puntos_maximos || 10,
-      lenguajeProgramacion: ej.ejercicio_lenguaje_programacion || 'javascript',
+      lenguajeProgramacion: ej.ejercicio_lenguaje_programacion,
       codigoBase: ej.ejercicio_codigo_base || '',
+      // Para ejercicios múltiple, filtrar las respuestas correctas
+      opcionesRespuesta: ej.ejercicio_opciones_respuesta 
+        ? ej.ejercicio_opciones_respuesta.map((op: any) => ({
+            id: op.id,
+            texto: op.texto
+            // NO enviamos esCorrecta
+          }))
+        : undefined,
+      textoConEspacios: ej.ejercicio_texto_con_espacios,
       totalIntentos: parseInt(ej.totalIntentos) || 0
     }));
   }
 
   /**
-   * Obtener detalle de un ejercicio especifico
-   * Endpoint: GET /api/v1/ejercicios/:id
+   * Obtener detalle de un ejercicio específico
+   * NO incluye código solución ni respuestas correctas
    */
   async obtenerEjercicioPorId(ejercicioId: number): Promise<EjercicioDto> {
     const ejercicio = await this.ejercicioRepository
@@ -123,14 +139,21 @@ export class EjercicioService {
       dificultad: ejercicio.dificultad || 'basica',
       tipoEjercicio: ejercicio.tipoEjercicio || 'codificacion',
       puntosMaximos: ejercicio.puntosMaximos || 10,
-      lenguajeProgramacion: ejercicio.lenguajeProgramacion || 'javascript',
-      codigoBase: ejercicio.codigoBase || ''
+      lenguajeProgramacion: ejercicio.lenguajeProgramacion,
+      codigoBase: ejercicio.codigoBase || '',
+      opcionesRespuesta: ejercicio.opcionesRespuesta 
+        ? ejercicio.opcionesRespuesta.map(op => ({
+            id: op.id,
+            texto: op.texto
+          }))
+        : undefined,
+      textoConEspacios: ejercicio.textoConEspacios
     };
   }
 
   /**
-   * ENDPOINT MAS IMPORTANTE: Enviar solucion de ejercicio
-   * Endpoint: POST /api/v1/ejercicios/:id/enviar
+   * ENDPOINT MÁS IMPORTANTE: Enviar solución de ejercicio
+   * Maneja los 3 tipos: codificación, múltiple, completar
    */
   async enviarEjercicio(
     ejercicioId: number,
@@ -147,7 +170,7 @@ export class EjercicioService {
       throw new Error('Ejercicio no encontrado');
     }
 
-    // 2. Validar que el usuario este matriculado en la materia
+    // 2. Validar que el usuario esté matriculado en la materia
     const materiaId = ejercicio.subtema.tema.materiaId;
     const matricula = await this.matriculaRepository.findOne({
       where: {
@@ -161,10 +184,61 @@ export class EjercicioService {
       throw new Error('Debes estar matriculado en la materia para enviar ejercicios');
     }
 
-    // 3. Crear intento inicial con estado "procesando"
+    // 3. Procesar según el tipo de ejercicio
+    let resultado: ResultadoEnvioDto;
+
+    switch (ejercicio.tipoEjercicio) {
+      case TipoEjercicio.CODIFICACION:
+        resultado = await this.procesarEjercicioCodificacion(ejercicio, usuarioId, datos);
+        break;
+      
+      case TipoEjercicio.MULTIPLE:
+        resultado = await this.procesarEjercicioMultiple(ejercicio, usuarioId, datos);
+        break;
+      
+      case TipoEjercicio.COMPLETAR:
+        resultado = await this.procesarEjercicioCompletar(ejercicio, usuarioId, datos);
+        break;
+      
+      default:
+        throw new Error('Tipo de ejercicio no soportado');
+    }
+
+    // 4. Actualizar progreso solo si es correcto
+    if (resultado.resultado === 'correcto') {
+      try {
+        await this.progresoService.actualizarProgreso(usuarioId, {
+          temaId: ejercicio.subtema.tema.id,
+          subtemaId: ejercicio.subtemaId,
+          estado: 'completado',
+          porcentajeCompletado: 100
+        });
+        resultado.progresoActualizado = true;
+      } catch (error) {
+        console.error('Error al actualizar progreso:', error);
+        resultado.progresoActualizado = false;
+      }
+    }
+
+    return resultado;
+  }
+
+  /**
+   * Procesar ejercicio de codificación
+   */
+  private async procesarEjercicioCodificacion(
+    ejercicio: Ejercicio,
+    usuarioId: number,
+    datos: EnviarEjercicioDto
+  ): Promise<ResultadoEnvioDto> {
+    if (!datos.codigoEnviado) {
+      throw new Error('Se requiere código para ejercicios de codificación');
+    }
+
+    // Crear intento inicial
     let intento = this.intentoRepository.create({
       usuarioId,
-      ejercicioId,
+      ejercicioId: ejercicio.id,
       codigoEnviado: datos.codigoEnviado,
       resultado: ResultadoEjercicio.ERROR,
       puntosObtenidos: 0
@@ -173,10 +247,10 @@ export class EjercicioService {
     intento = await this.intentoRepository.save(intento);
 
     try {
-      // 4. Llamar a Lulu para validar codigo
+      // Validar con IA (Gemini)
       const validationRequest = {
         codigo_enviado: datos.codigoEnviado,
-        ejercicio_id: ejercicioId,
+        ejercicio_id: ejercicio.id,
         usuario_id: usuarioId,
         enunciado: ejercicio.enunciado,
         codigo_solucion: ejercicio.codigoSolucion || '',
@@ -186,7 +260,7 @@ export class EjercicioService {
 
       const respuestaLulu = await this.validateCodeUseCase.execute(validationRequest);
 
-      // 5. Actualizar intento con resultado de Lulu
+      // Actualizar intento con resultado
       let resultadoEnum: ResultadoEjercicio;
       if (respuestaLulu.resultado === 'correcto') {
         resultadoEnum = ResultadoEjercicio.CORRECTO;
@@ -203,42 +277,162 @@ export class EjercicioService {
 
       await this.intentoRepository.save(intento);
 
-      // 6. Actualizar progreso (llamar a Tono)
-      let progresoActualizado = false;
-      try {
-        await this.progresoService.actualizarProgreso(usuarioId, {
-          temaId: ejercicio.subtema.tema.id,
-          subtemaId: ejercicio.subtemaId,
-          estado: resultadoEnum === ResultadoEjercicio.CORRECTO ? 'completado' : 'en_progreso',
-          porcentajeCompletado: resultadoEnum === ResultadoEjercicio.CORRECTO ? 100 : 50
-        });
-        progresoActualizado = true;
-      } catch (error) {
-        console.error('Error al actualizar progreso:', error);
-      }
-
-      // 7. Retornar resultado al estudiante
       return {
         resultado: respuestaLulu.resultado as 'correcto' | 'incorrecto' | 'error',
         puntosObtenidos: respuestaLulu.puntos_obtenidos || 0,
         retroalimentacionLlm: respuestaLulu.retroalimentacion_llm || '',
         intentoId: intento.id,
-        progresoActualizado
+        progresoActualizado: false
       };
 
     } catch (error: any) {
-      // Si falla la validacion con Lulu, actualizar intento con error
       intento.resultado = ResultadoEjercicio.ERROR;
       intento.retroalimentacion = `Error al procesar: ${error.message}`;
       await this.intentoRepository.save(intento);
 
-      throw new Error(`Error al validar codigo: ${error.message}`);
+      throw new Error(`Error al validar código: ${error.message}`);
     }
   }
 
   /**
+   * Procesar ejercicio de opción múltiple
+   */
+  private async procesarEjercicioMultiple(
+    ejercicio: Ejercicio,
+    usuarioId: number,
+    datos: EnviarEjercicioDto
+  ): Promise<ResultadoEnvioDto> {
+    if (!datos.opcionSeleccionadaId) {
+      throw new Error('Se requiere seleccionar una opción');
+    }
+
+    if (!ejercicio.opcionesRespuesta || ejercicio.opcionesRespuesta.length === 0) {
+      throw new Error('Este ejercicio no tiene opciones de respuesta configuradas');
+    }
+
+    // Buscar la opción seleccionada
+    const opcionSeleccionada = ejercicio.opcionesRespuesta.find(
+      op => op.id === datos.opcionSeleccionadaId
+    );
+
+    if (!opcionSeleccionada) {
+      throw new Error('Opción seleccionada no válida');
+    }
+
+    const esCorrecta = opcionSeleccionada.esCorrecta === true;
+    const resultado = esCorrecta ? ResultadoEjercicio.CORRECTO : ResultadoEjercicio.INCORRECTO;
+    const puntosObtenidos = esCorrecta ? ejercicio.puntosMaximos : 0;
+
+    // Crear intento
+    let intento = this.intentoRepository.create({
+      usuarioId,
+      ejercicioId: ejercicio.id,
+      codigoEnviado: JSON.stringify({ opcionSeleccionada: datos.opcionSeleccionadaId }),
+      resultado,
+      puntosObtenidos,
+      retroalimentacion: esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta',
+      retroalimentacionLlm: esCorrecta 
+        ? '¡Excelente! Has seleccionado la respuesta correcta.' 
+        : 'Respuesta incorrecta. Te recomiendo revisar el tema nuevamente.'
+    });
+
+    intento = await this.intentoRepository.save(intento);
+
+    // Encontrar la respuesta correcta para retroalimentación
+    const opcionCorrecta = ejercicio.opcionesRespuesta.find(op => op.esCorrecta === true);
+
+    return {
+      resultado: esCorrecta ? 'correcto' : 'incorrecto',
+      puntosObtenidos,
+      retroalimentacionLlm: esCorrecta 
+        ? '¡Correcto! Has demostrado comprensión del tema.' 
+        : `Incorrecto. La respuesta correcta es: "${opcionCorrecta?.texto}". Te sugiero repasar este concepto.`,
+      intentoId: intento.id,
+      progresoActualizado: false,
+      detalles: {
+        opcionSeleccionada: opcionSeleccionada.texto,
+        opcionCorrecta: opcionCorrecta?.texto
+      }
+    };
+  }
+
+  /**
+   * Procesar ejercicio de completar
+   */
+  private async procesarEjercicioCompletar(
+    ejercicio: Ejercicio,
+    usuarioId: number,
+    datos: EnviarEjercicioDto
+  ): Promise<ResultadoEnvioDto> {
+    if (!datos.respuestasCompletadas || datos.respuestasCompletadas.length === 0) {
+      throw new Error('Se requieren respuestas para completar');
+    }
+
+    if (!ejercicio.respuestasCorrectas || ejercicio.respuestasCorrectas.length === 0) {
+      throw new Error('Este ejercicio no tiene respuestas correctas configuradas');
+    }
+
+    if (datos.respuestasCompletadas.length !== ejercicio.respuestasCorrectas.length) {
+      throw new Error(`Se esperaban ${ejercicio.respuestasCorrectas.length} respuestas`);
+    }
+
+    // Comparar respuestas (case-insensitive y sin espacios extras)
+    let correctas = 0;
+    const comparaciones = datos.respuestasCompletadas.map((respuesta, index) => {
+      const respuestaLimpia = respuesta.trim().toLowerCase();
+      const correctaLimpia = ejercicio.respuestasCorrectas![index].trim().toLowerCase();
+      const esCorrecta = respuestaLimpia === correctaLimpia;
+      
+      if (esCorrecta) correctas++;
+      
+      return {
+        posicion: index + 1,
+        tuRespuesta: respuesta,
+        respuestaCorrecta: ejercicio.respuestasCorrectas![index],
+        esCorrecta
+      };
+    });
+
+    const todasCorrectas = correctas === ejercicio.respuestasCorrectas.length;
+    const porcentajeCorrectas = (correctas / ejercicio.respuestasCorrectas.length) * 100;
+    const puntosObtenidos = Math.round((porcentajeCorrectas / 100) * ejercicio.puntosMaximos);
+    
+    const resultado = todasCorrectas ? ResultadoEjercicio.CORRECTO : ResultadoEjercicio.INCORRECTO;
+
+    // Crear intento
+    let intento = this.intentoRepository.create({
+      usuarioId,
+      ejercicioId: ejercicio.id,
+      codigoEnviado: JSON.stringify({ respuestas: datos.respuestasCompletadas }),
+      resultado,
+      puntosObtenidos,
+      retroalimentacion: `${correctas} de ${ejercicio.respuestasCorrectas.length} respuestas correctas`,
+      retroalimentacionLlm: todasCorrectas
+        ? '¡Perfecto! Todas las respuestas son correctas.'
+        : `Tienes ${correctas} respuesta(s) correcta(s) de ${ejercicio.respuestasCorrectas.length}. Revisa las respuestas incorrectas.`
+    });
+
+    intento = await this.intentoRepository.save(intento);
+
+    return {
+      resultado: todasCorrectas ? 'correcto' : 'incorrecto',
+      puntosObtenidos,
+      retroalimentacionLlm: todasCorrectas
+        ? '¡Excelente trabajo! Has completado correctamente todos los espacios.'
+        : `Obtuviste ${correctas} de ${ejercicio.respuestasCorrectas.length} correctas (${porcentajeCorrectas.toFixed(0)}%). Revisa las respuestas marcadas en rojo.`,
+      intentoId: intento.id,
+      progresoActualizado: false,
+      detalles: {
+        comparaciones,
+        correctas,
+        total: ejercicio.respuestasCorrectas.length,
+        porcentaje: porcentajeCorrectas
+      }
+    };
+  }
+
+  /**
    * Obtener historial de intentos de un usuario en un ejercicio
-   * Endpoint: GET /api/v1/ejercicios/:id/intentos
    */
   async obtenerIntentosEjercicio(
     ejercicioId: number,

@@ -27,14 +27,17 @@ export class EjercicioAdminController {
         lenguajeProgramacion,
         codigoBase,
         codigoSolucion,
-        casosPrueba
+        casosPrueba,
+        opcionesRespuesta,
+        textoConEspacios,
+        respuestasCorrectas
       } = req.body;
 
       // Validar campos requeridos
-      if (!subtemaId || !enunciado) {
+      if (!subtemaId || !enunciado || !tipoEjercicio) {
         res.status(400).json({
           error: 'Campos requeridos faltantes',
-          mensaje: 'subtemaId y enunciado son obligatorios'
+          mensaje: 'subtemaId, enunciado y tipoEjercicio son obligatorios'
         });
         return;
       }
@@ -46,20 +49,60 @@ export class EjercicioAdminController {
         return;
       }
 
+      // Validar tipo de ejercicio
+      if (!Object.values(TipoEjercicio).includes(tipoEjercicio)) {
+        res.status(400).json({
+          error: 'Tipo de ejercicio inválido',
+          mensaje: `El tipo debe ser: ${Object.values(TipoEjercicio).join(', ')}`
+        });
+        return;
+      }
+
+      // Validaciones específicas por tipo de ejercicio
+      if (tipoEjercicio === TipoEjercicio.MULTIPLE) {
+        if (!opcionesRespuesta || !Array.isArray(opcionesRespuesta) || opcionesRespuesta.length < 2) {
+          res.status(400).json({
+            error: 'Opciones de respuesta inválidas',
+            mensaje: 'Debes proporcionar al menos 2 opciones de respuesta'
+          });
+          return;
+        }
+
+        const tieneCorrecta = opcionesRespuesta.some(op => op.esCorrecta === true);
+        if (!tieneCorrecta) {
+          res.status(400).json({
+            error: 'Opciones de respuesta inválidas',
+            mensaje: 'Debes marcar al menos una opción como correcta'
+          });
+          return;
+        }
+      }
+
+      if (tipoEjercicio === TipoEjercicio.COMPLETAR) {
+        if (!textoConEspacios || !respuestasCorrectas || respuestasCorrectas.length === 0) {
+          res.status(400).json({
+            error: 'Datos de completar inválidos',
+            mensaje: 'Debes proporcionar el texto con espacios y las respuestas correctas'
+          });
+          return;
+        }
+
+        // Validar que el número de espacios coincida con el número de respuestas
+        const numeroEspacios = (textoConEspacios.match(/____/g) || []).length;
+        if (numeroEspacios !== respuestasCorrectas.length) {
+          res.status(400).json({
+            error: 'Datos de completar inválidos',
+            mensaje: `El número de espacios (${numeroEspacios}) debe coincidir con el número de respuestas (${respuestasCorrectas.length})`
+          });
+          return;
+        }
+      }
+
       // Validar dificultad si se proporciona
       if (dificultad && !Object.values(DificultadEjercicio).includes(dificultad)) {
         res.status(400).json({
           error: 'Dificultad inválida',
           mensaje: `La dificultad debe ser: ${Object.values(DificultadEjercicio).join(', ')}`
-        });
-        return;
-      }
-
-      // Validar tipo de ejercicio si se proporciona
-      if (tipoEjercicio && !Object.values(TipoEjercicio).includes(tipoEjercicio)) {
-        res.status(400).json({
-          error: 'Tipo de ejercicio inválido',
-          mensaje: `El tipo debe ser: ${Object.values(TipoEjercicio).join(', ')}`
         });
         return;
       }
@@ -82,22 +125,16 @@ export class EjercicioAdminController {
         lenguajeProgramacion,
         codigoBase,
         codigoSolucion,
-        casosPrueba
+        casosPrueba,
+        opcionesRespuesta,
+        textoConEspacios,
+        respuestasCorrectas
       });
 
       res.status(201).json({
         success: true,
         mensaje: 'Ejercicio creado exitosamente',
-        data: {
-          id: nuevoEjercicio.id,
-          subtemaId: nuevoEjercicio.subtemaId,
-          enunciado: nuevoEjercicio.enunciado,
-          dificultad: nuevoEjercicio.dificultad,
-          tipoEjercicio: nuevoEjercicio.tipoEjercicio,
-          puntosMaximos: nuevoEjercicio.puntosMaximos,
-          lenguajeProgramacion: nuevoEjercicio.lenguajeProgramacion,
-          codigoBase: nuevoEjercicio.codigoBase
-        }
+        data: nuevoEjercicio
       });
     } catch (error: any) {
       logError('Error al crear ejercicio:', error);
@@ -172,6 +209,17 @@ export class EjercicioAdminController {
         return;
       }
 
+      // Validaciones específicas por tipo
+      if (datosActualizacion.tipoEjercicio === TipoEjercicio.MULTIPLE && datosActualizacion.opcionesRespuesta) {
+        if (!Array.isArray(datosActualizacion.opcionesRespuesta) || datosActualizacion.opcionesRespuesta.length < 2) {
+          res.status(400).json({
+            error: 'Opciones de respuesta inválidas',
+            mensaje: 'Debes proporcionar al menos 2 opciones de respuesta'
+          });
+          return;
+        }
+      }
+
       const ejercicioActualizado = await this.ejercicioAdminService.actualizarEjercicio(
         ejercicioId,
         datosActualizacion
@@ -180,16 +228,7 @@ export class EjercicioAdminController {
       res.status(200).json({
         success: true,
         mensaje: 'Ejercicio actualizado exitosamente',
-        data: {
-          id: ejercicioActualizado.id,
-          subtemaId: ejercicioActualizado.subtemaId,
-          enunciado: ejercicioActualizado.enunciado,
-          dificultad: ejercicioActualizado.dificultad,
-          tipoEjercicio: ejercicioActualizado.tipoEjercicio,
-          puntosMaximos: ejercicioActualizado.puntosMaximos,
-          lenguajeProgramacion: ejercicioActualizado.lenguajeProgramacion,
-          codigoBase: ejercicioActualizado.codigoBase
-        }
+        data: ejercicioActualizado
       });
     } catch (error: any) {
       logError('Error al actualizar ejercicio:', error);
@@ -203,6 +242,44 @@ export class EjercicioAdminController {
 
       res.status(500).json({
         error: 'Error interno al actualizar ejercicio',
+        mensaje: error.message
+      });
+    }
+  };
+
+  /**
+   * GET /api/v1/admin/ejercicios/:id
+   * Obtener un ejercicio completo (incluye código solución para admin)
+   */
+  obtenerEjercicio = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const ejercicioId = parseInt(req.params.id);
+
+      if (isNaN(ejercicioId)) {
+        res.status(400).json({
+          error: 'ID de ejercicio inválido'
+        });
+        return;
+      }
+
+      const ejercicio = await this.ejercicioAdminService.obtenerEjercicioPorId(ejercicioId);
+
+      res.status(200).json({
+        success: true,
+        data: ejercicio
+      });
+    } catch (error: any) {
+      logError('Error al obtener ejercicio:', error);
+
+      if (error.message === 'Ejercicio no encontrado') {
+        res.status(404).json({
+          error: 'Ejercicio no encontrado'
+        });
+        return;
+      }
+
+      res.status(500).json({
+        error: 'Error interno al obtener ejercicio',
         mensaje: error.message
       });
     }

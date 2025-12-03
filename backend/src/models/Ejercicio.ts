@@ -69,6 +69,26 @@ export class Ejercicio {
   @Max(100, { message: 'Los puntos maximos deben ser menor o igual a 100' })
   puntosMaximos: number;
 
+  // NUEVOS CAMPOS PARA EJERCICIOS MÚLTIPLE Y COMPLETAR
+  
+  // Para ejercicios de opción múltiple
+  @Column({ type: 'jsonb', nullable: true, name: 'opciones_respuesta' })
+  @IsOptional()
+  opcionesRespuesta: {
+    id: string;
+    texto: string;
+    esCorrecta: boolean;
+  }[];
+
+  // Para ejercicios de completar
+  @Column({ type: 'text', nullable: true, name: 'texto_con_espacios' })
+  @IsOptional()
+  textoConEspacios: string; // Ej: "Una ____ es una estructura de datos que almacena ____"
+
+  @Column({ type: 'jsonb', nullable: true, name: 'respuestas_correctas' })
+  @IsOptional()
+  respuestasCorrectas: string[]; // Ej: ["función", "valores"]
+
   // Relaciones
   @ManyToOne(() => Subtema, (subtema) => subtema.ejercicios, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subtema_id' })

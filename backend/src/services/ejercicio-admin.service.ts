@@ -1,53 +1,85 @@
 // backend/src/services/ejercicio-admin.service.ts
 
 import { AppDataSource } from '../config/database';
-import { Ejercicio, DificultadEjercicio, TipoEjercicio } from '../models/Ejercicio';
+import { Ejercicio, TipoEjercicio } from '../models/Ejercicio';
 import { Subtema } from '../models/Subtema';
-import { IntentoEjercicio } from '../models/IntentoEjercicio';
 import { Repository } from 'typeorm';
-import { logError } from '../utils/logger';
-
-export interface CrearEjercicioDto {
-  subtemaId: number;
-  enunciado: string;
-  dificultad?: DificultadEjercicio;
-  tipoEjercicio?: TipoEjercicio;
-  puntosMaximos?: number;
-  lenguajeProgramacion?: string;
-  codigoBase?: string;
-  codigoSolucion?: string;
-  casosPrueba?: any;
-}
-
-export interface ActualizarEjercicioDto {
-  enunciado?: string;
-  dificultad?: DificultadEjercicio;
-  tipoEjercicio?: TipoEjercicio;
-  puntosMaximos?: number;
-  lenguajeProgramacion?: string;
-  codigoBase?: string;
-  codigoSolucion?: string;
-  casosPrueba?: any;
-}
 
 export class EjercicioAdminService {
   private ejercicioRepository: Repository<Ejercicio>;
   private subtemaRepository: Repository<Subtema>;
-  private intentoRepository: Repository<IntentoEjercicio>;
 
   constructor() {
     this.ejercicioRepository = AppDataSource.getRepository(Ejercicio);
     this.subtemaRepository = AppDataSource.getRepository(Subtema);
-    this.intentoRepository = AppDataSource.getRepository(IntentoEjercicio);
   }
 
   /**
    * Crear un nuevo ejercicio
-   * Solo admin o profesor
    */
-  async crearEjercicio(datos: CrearEjercicioDto): Promise<Ejercicio> {
-    try {
-      // Verificar que el subtema exista
+  async crearEjercicio(datos: any): Promise<Ejercicio> {
+    // Validar que el subtema exista
+    const subtema = await this.subtemaRepository.findOne({
+      where: { id: datos.subtemaId }
+    });
+
+    if (!subtema) {
+      throw new Error('El subtema especificado no existe');
+    }
+
+    // Crear ejercicio con los datos apropiados según el tipo
+    const ejercicio = this.ejercicioRepository.create({
+      subtemaId: datos.subtemaId,
+      enunciado: datos.enunciado,
+      dificultad: datos.dificultad || 'basica',
+      tipoEjercicio: datos.tipoEjercicio,
+      puntosMaximos: datos.puntosMaximos || 10,
+      
+      // Campos para CODIFICACION
+      lenguajeProgramacion: datos.tipoEjercicio === TipoEjercicio.CODIFICACION 
+        ? datos.lenguajeProgramacion 
+        : null,
+      codigoBase: datos.tipoEjercicio === TipoEjercicio.CODIFICACION 
+        ? datos.codigoBase 
+        : null,
+      codigoSolucion: datos.tipoEjercicio === TipoEjercicio.CODIFICACION 
+        ? datos.codigoSolucion 
+        : null,
+      casosPrueba: datos.tipoEjercicio === TipoEjercicio.CODIFICACION 
+        ? datos.casosPrueba 
+        : null,
+      
+      // Campos para MULTIPLE
+      opcionesRespuesta: datos.tipoEjercicio === TipoEjercicio.MULTIPLE 
+        ? datos.opcionesRespuesta 
+        : null,
+      
+      // Campos para COMPLETAR
+      textoConEspacios: datos.tipoEjercicio === TipoEjercicio.COMPLETAR 
+        ? datos.textoConEspacios 
+        : null,
+      respuestasCorrectas: datos.tipoEjercicio === TipoEjercicio.COMPLETAR 
+        ? datos.respuestasCorrectas 
+        : null
+    });
+
+    return await this.ejercicioRepository.save(ejercicio);
+  }
+
+  /**
+   * Actualizar un ejercicio existente
+   */
+  async actualizarEjercicio(ejercicioId: number, datos: any): Promise<Ejercicio> {
+    const ejercicio = await this.ejercicioRepository.findOne({
+      where: { id: ejercicioId }
+    });
+
+    if (!ejercicio) {
+      throw new Error('Ejercicio no encontrado');
+    }
+
+    // Si se cambia el subtema, validar que exista
+    if (datos.subtemaId && datos.subtemaId !== ejercicio.subtemaId) {
       const subtema = await this.subtemaRepository.findOne({
         where: { id: datos.subtemaId }
       });
@@ -55,91 +87,66 @@ export class EjercicioAdminService {
       if (!subtema) {
         throw new Error('El subtema especificado no existe');
       }
-
-      // Crear el ejercicio
-      const nuevoEjercicio = this.ejercicioRepository.create({
-        subtemaId: datos.subtemaId,
-        enunciado: datos.enunciado,
-        dificultad: datos.dificultad || DificultadEjercicio.BASICA,
-        tipoEjercicio: datos.tipoEjercicio || TipoEjercicio.CODIFICACION,
-        puntosMaximos: datos.puntosMaximos || 10,
-        lenguajeProgramacion: datos.lenguajeProgramacion || 'javascript',
-        codigoBase: datos.codigoBase || '',
-        codigoSolucion: datos.codigoSolucion || '',
-        casosPrueba: datos.casosPrueba || []
-      });
-
-      return await this.ejercicioRepository.save(nuevoEjercicio);
-    } catch (error: any) {
-      logError('Error al crear ejercicio:', error);
-      throw error;
     }
+
+    // Actualizar solo los campos proporcionados
+    if (datos.enunciado !== undefined) ejercicio.enunciado = datos.enunciado;
+    if (datos.dificultad !== undefined) ejercicio.dificultad = datos.dificultad;
+    if (datos.tipoEjercicio !== undefined) ejercicio.tipoEjercicio = datos.tipoEjercicio;
+    if (datos.puntosMaximos !== undefined) ejercicio.puntosMaximos = datos.puntosMaximos;
+    
+    // Campos de codificación
+    if (datos.lenguajeProgramacion !== undefined) ejercicio.lenguajeProgramacion = datos.lenguajeProgramacion;
+    if (datos.codigoBase !== undefined) ejercicio.codigoBase = datos.codigoBase;
+    if (datos.codigoSolucion !== undefined) ejercicio.codigoSolucion = datos.codigoSolucion;
+    if (datos.casosPrueba !== undefined) ejercicio.casosPrueba = datos.casosPrueba;
+    
+    // Campos de opción múltiple
+    if (datos.opcionesRespuesta !== undefined) ejercicio.opcionesRespuesta = datos.opcionesRespuesta;
+    
+    // Campos de completar
+    if (datos.textoConEspacios !== undefined) ejercicio.textoConEspacios = datos.textoConEspacios;
+    if (datos.respuestasCorrectas !== undefined) ejercicio.respuestasCorrectas = datos.respuestasCorrectas;
+
+    return await this.ejercicioRepository.save(ejercicio);
   }
 
   /**
-   * Actualizar un ejercicio existente
-   * Solo admin o profesor
+   * Obtener un ejercicio por ID (incluye todos los campos para admin)
    */
-  async actualizarEjercicio(
-    ejercicioId: number,
-    datos: ActualizarEjercicioDto
-  ): Promise<Ejercicio> {
-    try {
-      const ejercicio = await this.ejercicioRepository.findOne({
-        where: { id: ejercicioId }
-      });
+  async obtenerEjercicioPorId(ejercicioId: number): Promise<Ejercicio> {
+    const ejercicio = await this.ejercicioRepository.findOne({
+      where: { id: ejercicioId },
+      relations: ['subtema', 'subtema.tema']
+    });
 
-      if (!ejercicio) {
-        throw new Error('Ejercicio no encontrado');
-      }
-
-      // Actualizar solo los campos proporcionados
-      if (datos.enunciado !== undefined) ejercicio.enunciado = datos.enunciado;
-      if (datos.dificultad !== undefined) ejercicio.dificultad = datos.dificultad;
-      if (datos.tipoEjercicio !== undefined) ejercicio.tipoEjercicio = datos.tipoEjercicio;
-      if (datos.puntosMaximos !== undefined) ejercicio.puntosMaximos = datos.puntosMaximos;
-      if (datos.lenguajeProgramacion !== undefined) ejercicio.lenguajeProgramacion = datos.lenguajeProgramacion;
-      if (datos.codigoBase !== undefined) ejercicio.codigoBase = datos.codigoBase;
-      if (datos.codigoSolucion !== undefined) ejercicio.codigoSolucion = datos.codigoSolucion;
-      if (datos.casosPrueba !== undefined) ejercicio.casosPrueba = datos.casosPrueba;
-
-      return await this.ejercicioRepository.save(ejercicio);
-    } catch (error: any) {
-      logError('Error al actualizar ejercicio:', error);
-      throw error;
+    if (!ejercicio) {
+      throw new Error('Ejercicio no encontrado');
     }
+
+    return ejercicio;
   }
 
   /**
    * Eliminar un ejercicio
-   * Solo admin
-   * Verifica que no tenga intentos asociados
    */
   async eliminarEjercicio(ejercicioId: number): Promise<void> {
-    try {
-      const ejercicio = await this.ejercicioRepository.findOne({
-        where: { id: ejercicioId }
-      });
+    const ejercicio = await this.ejercicioRepository.findOne({
+      where: { id: ejercicioId },
+      relations: ['intentos']
+    });
 
-      if (!ejercicio) {
-        throw new Error('Ejercicio no encontrado');
-      }
-
-      // Verificar que no tenga intentos asociados
-      const intentos = await this.intentoRepository.count({
-        where: { ejercicioId: ejercicioId }
-      });
-
-      if (intentos > 0) {
-        throw new Error(
-          `No se puede eliminar el ejercicio porque tiene ${intentos} intento(s) asociado(s)`
-        );
-      }
-
-      await this.ejercicioRepository.remove(ejercicio);
-    } catch (error: any) {
-      logError('Error al eliminar ejercicio:', error);
-      throw error;
+    if (!ejercicio) {
+      throw new Error('Ejercicio no encontrado');
     }
+
+    // Verificar si hay intentos
+    if (ejercicio.intentos && ejercicio.intentos.length > 0) {
+      throw new Error(
+        `No se puede eliminar el ejercicio porque tiene ${ejercicio.intentos.length} intento(s) registrado(s)`
+      );
+    }
+
+    await this.ejercicioRepository.remove(ejercicio);
   }
 }

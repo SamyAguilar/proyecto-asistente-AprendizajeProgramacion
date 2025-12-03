@@ -9,6 +9,10 @@ const router = Router();
 const ejercicioAdminController = new EjercicioAdminController();
 
 /**
+ * TODAS LAS RUTAS REQUIEREN AUTENTICACIÓN + ROL ADMIN/PROFESOR
+ */
+
+/**
  * @route   POST /api/v1/admin/ejercicios
  * @desc    Crear un nuevo ejercicio
  * @access  Private (requiere token JWT + rol profesor o admin)
@@ -18,6 +22,18 @@ router.post(
   authMiddleware,
   profesorOAdmin,
   (req, res) => ejercicioAdminController.crearEjercicio(req, res)
+);
+
+/**
+ * @route   GET /api/v1/admin/ejercicios/:id
+ * @desc    Obtener un ejercicio completo (incluye código solución)
+ * @access  Private (requiere token JWT + rol profesor o admin)
+ */
+router.get(
+  '/:id',
+  authMiddleware,
+  profesorOAdmin,
+  (req, res) => ejercicioAdminController.obtenerEjercicio(req, res)
 );
 
 /**
