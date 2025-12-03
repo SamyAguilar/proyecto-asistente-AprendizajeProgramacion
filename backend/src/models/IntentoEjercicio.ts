@@ -1,3 +1,4 @@
+// backend/src/models/IntentoEjercicio.ts
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { IsEnum, IsInt, Min, Max, IsOptional } from 'class-validator';
 import { Usuario } from './Usuario';
@@ -48,8 +49,9 @@ export class IntentoEjercicio {
   @Max(100, { message: 'Los puntos obtenidos deben ser menor o igual a 100' })
   puntosObtenidos: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  timestamp: Date;
+  // CORRECCIÓN: Usar fechaIntento para consistencia con TypeScript y TypeORM
+  @CreateDateColumn({ type: 'timestamp', name: 'fecha_intento' })
+  fechaIntento: Date;
 
   // Relaciones
   @ManyToOne(() => Usuario, (usuario) => usuario.intentosEjercicios, { onDelete: 'CASCADE' })

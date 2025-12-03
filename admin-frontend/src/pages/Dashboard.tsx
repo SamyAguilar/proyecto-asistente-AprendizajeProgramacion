@@ -23,6 +23,7 @@ import {
   School as SchoolIcon,
   People as PeopleIcon,
   PersonAdd as PersonAddIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import React, { useState } from 'react';
 
@@ -66,6 +67,12 @@ export const Dashboard = () => {
       icon: <PeopleIcon />,
       path: '/dashboard/usuarios',
       description: 'Gestión de usuarios del sistema',
+    },
+    {
+      text: 'Estudiantes por Materia',
+      icon: <AssignmentIcon />,
+      path: '/dashboard/estudiantes-materia',
+      description: 'Ver estudiantes inscritos',
     },
     {
       text: 'Crear Admin',

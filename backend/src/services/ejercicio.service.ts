@@ -90,12 +90,13 @@ export class EjercicioService {
             ejercicioId: ejercicio.id,
             usuarioId
           },
-          order: { timestamp: 'DESC' }
+          // CORRECCIÓN: Usar fechaIntento
+          order: { fechaIntento: 'DESC' }
         });
 
         const totalIntentos = intentos.length;
         
-        // ⚠️ FIX CLAVE: Un ejercicio está resuelto si tiene al menos un intento con puntaje máximo
+        // Un ejercicio está resuelto si tiene al menos un intento con puntaje máximo
         const resuelto = intentos.some(i => i.puntosObtenidos === ejercicio.puntosMaximos);
 
         return {
@@ -117,7 +118,7 @@ export class EjercicioService {
             : undefined,
           textoConEspacios: ejercicio.textoConEspacios,
           totalIntentos,
-          resuelto // ⬅️ INCLUIR resuelto en el listado
+          resuelto
         };
       })
     );
@@ -141,10 +142,10 @@ export class EjercicioService {
       throw new Error('Ejercicio no encontrado');
     }
     
-    // ⚠️ FIX CLAVE: Obtener intentos del usuario para calcular el estado de resolución
+    // CORRECCIÓN: Usar fechaIntento
     const intentos = await this.intentoRepository.find({
       where: { ejercicioId, usuarioId },
-      order: { timestamp: 'DESC' },
+      order: { fechaIntento: 'DESC' },
     });
 
     const totalIntentos = intentos.length;
@@ -168,20 +169,18 @@ export class EjercicioService {
         : undefined,
       textoConEspacios: ejercicio.textoConEspacios,
       totalIntentos,
-      resuelto, // ⬅️ Incluir resuelto en la respuesta
+      resuelto,
     };
   }
 
   /**
    * ENDPOINT MÁS IMPORTANTE: Enviar solución de ejercicio
-   * Maneja los 3 tipos: codificación, múltiple, completar
    */
   async enviarEjercicio(
     ejercicioId: number,
     usuarioId: number,
     datos: EnviarEjercicioDto
   ): Promise<ResultadoEnvioDto> {
-    // 1. Validar que el ejercicio exista
     const ejercicio = await this.ejercicioRepository.findOne({
       where: { id: ejercicioId },
       relations: ['subtema', 'subtema.tema']
@@ -191,7 +190,6 @@ export class EjercicioService {
       throw new Error('Ejercicio no encontrado');
     }
 
-    // 2. Validar que el usuario esté matriculado en la materia
     const materiaId = ejercicio.subtema.tema.materiaId;
     const matricula = await this.matriculaRepository.findOne({
       where: {
@@ -205,7 +203,6 @@ export class EjercicioService {
       throw new Error('Debes estar matriculado en la materia para enviar ejercicios');
     }
 
-    // 3. Procesar según el tipo de ejercicio
     let resultado: ResultadoEnvioDto;
 
     switch (ejercicio.tipoEjercicio) {
@@ -225,8 +222,6 @@ export class EjercicioService {
         throw new Error('Tipo de ejercicio no soportado');
     }
 
-    // 4. ⚠️ FIX CLAVE: Actualizar progreso usando el método inteligente
-    // que calcula el porcentaje basado en TODOS los ejercicios del tema
     if (resultado.resultado === 'correcto') {
       try {
         await this.progresoService.calcularYActualizarProgresoTema(
@@ -243,9 +238,6 @@ export class EjercicioService {
     return resultado;
   }
 
-  /**
-   * Procesar ejercicio de codificación
-   */
   private async procesarEjercicioCodificacion(
     ejercicio: Ejercicio,
     usuarioId: number,
@@ -255,7 +247,6 @@ export class EjercicioService {
       throw new Error('Se requiere código para ejercicios de codificación');
     }
 
-    // Crear intento inicial
     let intento = this.intentoRepository.create({
       usuarioId,
       ejercicioId: ejercicio.id,
@@ -267,7 +258,6 @@ export class EjercicioService {
     intento = await this.intentoRepository.save(intento);
 
     try {
-      // Validar con IA (Gemini)
       const validationRequest = {
         codigo_enviado: datos.codigoEnviado,
         ejercicio_id: ejercicio.id,
@@ -280,7 +270,6 @@ export class EjercicioService {
 
       const respuestaLulu = await this.validateCodeUseCase.execute(validationRequest);
 
-      // Actualizar intento con resultado
       let resultadoEnum: ResultadoEjercicio;
       if (respuestaLulu.resultado === 'correcto') {
         resultadoEnum = ResultadoEjercicio.CORRECTO;
@@ -314,9 +303,6 @@ export class EjercicioService {
     }
   }
 
-  /**
-   * Procesar ejercicio de opción múltiple
-   */
   private async procesarEjercicioMultiple(
     ejercicio: Ejercicio,
     usuarioId: number,
@@ -330,7 +316,6 @@ export class EjercicioService {
       throw new Error('Este ejercicio no tiene opciones de respuesta configuradas');
     }
 
-    // Buscar la opción seleccionada
     const opcionSeleccionada = ejercicio.opcionesRespuesta.find(
       op => op.id === datos.opcionSeleccionadaId
     );
@@ -343,7 +328,6 @@ export class EjercicioService {
     const resultado = esCorrecta ? ResultadoEjercicio.CORRECTO : ResultadoEjercicio.INCORRECTO;
     const puntosObtenidos = esCorrecta ? ejercicio.puntosMaximos : 0;
 
-    // Crear intento
     let intento = this.intentoRepository.create({
       usuarioId,
       ejercicioId: ejercicio.id,
@@ -358,7 +342,6 @@ export class EjercicioService {
 
     intento = await this.intentoRepository.save(intento);
 
-    // Encontrar la respuesta correcta para retroalimentación
     const opcionCorrecta = ejercicio.opcionesRespuesta.find(op => op.esCorrecta === true);
 
     return {
@@ -376,9 +359,6 @@ export class EjercicioService {
     };
   }
 
-  /**
-   * Procesar ejercicio de completar
-   */
   private async procesarEjercicioCompletar(
     ejercicio: Ejercicio,
     usuarioId: number,
@@ -396,7 +376,6 @@ export class EjercicioService {
       throw new Error(`Se esperaban ${ejercicio.respuestasCorrectas.length} respuestas`);
     }
 
-    // Comparar respuestas (case-insensitive y sin espacios extras)
     let correctas = 0;
     const comparaciones = datos.respuestasCompletadas.map((respuesta, index) => {
       const respuestaLimpia = respuesta.trim().toLowerCase();
@@ -419,7 +398,6 @@ export class EjercicioService {
     
     const resultado = todasCorrectas ? ResultadoEjercicio.CORRECTO : ResultadoEjercicio.INCORRECTO;
 
-    // Crear intento
     let intento = this.intentoRepository.create({
       usuarioId,
       ejercicioId: ejercicio.id,
@@ -463,8 +441,9 @@ export class EjercicioService {
         ejercicioId,
         usuarioId
       },
+      // CORRECCIÓN: Usar fechaIntento
       order: {
-        timestamp: 'DESC'
+        fechaIntento: 'DESC'
       }
     });
 
@@ -476,7 +455,8 @@ export class EjercicioService {
       puntosObtenidos: intento.puntosObtenidos || 0,
       retroalimentacion: intento.retroalimentacion || '',
       retroalimentacionLlm: intento.retroalimentacionLlm || '',
-      timestamp: intento.timestamp
+      // CORRECCIÓN: Usar fechaIntento
+      timestamp: intento.fechaIntento
     }));
   }
 }

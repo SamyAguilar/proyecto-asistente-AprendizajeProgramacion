@@ -30,6 +30,7 @@ import { EjercicioForm } from './pages/ejercicios/EjercicioForm';
 // Usuarios Admin
 import { UsuariosList } from './pages/usuarios/UsuariosList';
 import { CrearAdmin } from './pages/usuarios/CrearAdmin';
+import { EstudiantesPorMateria } from './pages/usuarios/EstudiantesPorMateria';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -86,6 +87,7 @@ function App() {
             {/* === USUARIOS ADMIN ROUTES === */}
             <Route path="usuarios" element={<UsuariosList />} />
             <Route path="crear-admin" element={<CrearAdmin />} />
+            <Route path="estudiantes-materia" element={<EstudiantesPorMateria />} />
           </Route>
 
           {/* Redirect root to dashboard */}

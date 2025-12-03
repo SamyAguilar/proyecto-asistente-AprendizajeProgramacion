@@ -13,12 +13,15 @@ import {
   IconButton,
   CircularProgress,
   Paper,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Visibility,
   VisibilityOff,
   Login as LoginIcon,
   School as SchoolIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -32,23 +35,32 @@ const loginSchema = z.object({
   contraseña: z.string().min(6, 'La contrasena debe tener al menos 6 caracteres'),
 });
 
+const registerSchema = z.object({
+  email: z.string().email('Email invalido'),
+  contraseña: z.string().min(6, 'La contrasena debe tener al menos 6 caracteres'),
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
+});
+
 type LoginFormData = z.infer<typeof loginSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [tabValue, setTabValue] = useState(0);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
+  const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const registerForm = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onLoginSubmit = async (data: LoginFormData) => {
     try {
       setLoading(true);
       setError('');
@@ -76,6 +88,31 @@ export const Login = () => {
     } catch (error: any) {
       console.error('Error completo:', error);
       const message = error.response?.data?.message || 'Error al iniciar sesion';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRegisterSubmit = async (data: RegisterFormData) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      await axiosInstance.post('/auth/registro', {
+        ...data,
+        rol: 'admin'
+      });
+
+      toast.success('Cuenta de administrador creada exitosamente. Ahora puedes iniciar sesión.');
+      
+      // Cambiar a tab de login y limpiar formulario
+      setTabValue(0);
+      registerForm.reset();
+    } catch (error: any) {
+      console.error('Error completo:', error);
+      const message = error.response?.data?.message || 'Error al crear cuenta';
       setError(message);
       toast.error(message);
     } finally {
@@ -165,6 +202,20 @@ export const Login = () => {
               </Typography>
             </Box>
 
+            {/* Tabs */}
+            <Tabs
+              value={tabValue}
+              onChange={(_, newValue) => {
+                setTabValue(newValue);
+                setError('');
+              }}
+              variant="fullWidth"
+              sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label="Iniciar Sesión" icon={<LoginIcon />} iconPosition="start" />
+              <Tab label="Crear Cuenta" icon={<PersonAddIcon />} iconPosition="start" />
+            </Tabs>
+
             {error && (
               <Alert
                 severity="error"
@@ -179,79 +230,183 @@ export const Login = () => {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <TextField
-                  fullWidth
-                  label="Correo Electronico"
-                  type="email"
-                  {...register('email')}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  autoComplete="email"
-                  autoFocus
-                  disabled={loading}
-                  InputProps={{
-                    sx: { borderRadius: 2 },
-                  }}
-                />
+            {/* Formulario de Login */}
+            {tabValue === 0 && (
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <TextField
+                    fullWidth
+                    label="Correo Electronico"
+                    type="email"
+                    {...loginForm.register('email')}
+                    error={!!loginForm.formState.errors.email}
+                    helperText={loginForm.formState.errors.email?.message}
+                    autoComplete="email"
+                    autoFocus
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                    }}
+                  />
 
-                <TextField
-                  fullWidth
-                  label="Contrasena"
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('contraseña')}
-                  error={!!errors.contraseña}
-                  helperText={errors.contraseña?.message}
-                  autoComplete="current-password"
-                  disabled={loading}
-                  InputProps={{
-                    sx: { borderRadius: 2 },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          disabled={loading}
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  <TextField
+                    fullWidth
+                    label="Contrasena"
+                    type={showPassword ? 'text' : 'password'}
+                    {...loginForm.register('contraseña')}
+                    error={!!loginForm.formState.errors.contraseña}
+                    helperText={loginForm.formState.errors.contraseña?.message}
+                    autoComplete="current-password"
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            disabled={loading}
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
 
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : <LoginIcon />}
-                  sx={{
-                    mt: 1,
-                    py: 1.8,
-                    borderRadius: 2,
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
-                    boxShadow: '0 6px 20px rgba(99, 102, 241, 0.4)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #4f46e5 0%, #db2777 100%)',
-                      boxShadow: '0 8px 24px rgba(99, 102, 241, 0.5)',
-                      transform: 'translateY(-2px)',
-                    },
-                    '&:active': {
-                      transform: 'translateY(0)',
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  {loading ? 'Iniciando sesion...' : 'Iniciar Sesion'}
-                </Button>
-              </Box>
-            </form>
+                  <Button
+                    fullWidth
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} /> : <LoginIcon />}
+                    sx={{
+                      mt: 1,
+                      py: 1.8,
+                      borderRadius: 2,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
+                      boxShadow: '0 6px 20px rgba(99, 102, 241, 0.4)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #4f46e5 0%, #db2777 100%)',
+                        boxShadow: '0 8px 24px rgba(99, 102, 241, 0.5)',
+                        transform: 'translateY(-2px)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    {loading ? 'Iniciando sesion...' : 'Iniciar Sesion'}
+                  </Button>
+                </Box>
+              </form>
+            )}
+
+            {/* Formulario de Registro */}
+            {tabValue === 1 && (
+              <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <TextField
+                    fullWidth
+                    label="Nombre"
+                    {...registerForm.register('nombre')}
+                    error={!!registerForm.formState.errors.nombre}
+                    helperText={registerForm.formState.errors.nombre?.message}
+                    autoFocus
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                    }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Apellido"
+                    {...registerForm.register('apellido')}
+                    error={!!registerForm.formState.errors.apellido}
+                    helperText={registerForm.formState.errors.apellido?.message}
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                    }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Correo Electronico"
+                    type="email"
+                    {...registerForm.register('email')}
+                    error={!!registerForm.formState.errors.email}
+                    helperText={registerForm.formState.errors.email?.message}
+                    autoComplete="email"
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                    }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Contrasena"
+                    type={showPassword ? 'text' : 'password'}
+                    {...registerForm.register('contraseña')}
+                    error={!!registerForm.formState.errors.contraseña}
+                    helperText={registerForm.formState.errors.contraseña?.message}
+                    autoComplete="new-password"
+                    disabled={loading}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            disabled={loading}
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <Button
+                    fullWidth
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} /> : <PersonAddIcon />}
+                    sx={{
+                      mt: 1,
+                      py: 1.8,
+                      borderRadius: 2,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                        boxShadow: '0 8px 24px rgba(16, 185, 129, 0.5)',
+                        transform: 'translateY(-2px)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    {loading ? 'Creando cuenta...' : 'Crear Cuenta de Administrador'}
+                  </Button>
+                </Box>
+              </form>
+            )}
 
             <Box mt={4} textAlign="center">
               <Paper
@@ -265,8 +420,16 @@ export const Login = () => {
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  Solo usuarios con rol de <strong>Administrador</strong> o{' '}
-                  <strong>Profesor</strong> pueden acceder
+                  {tabValue === 0 ? (
+                    <>
+                      Solo usuarios con rol de <strong>Administrador</strong> o{' '}
+                      <strong>Profesor</strong> pueden acceder
+                    </>
+                  ) : (
+                    <>
+                      La nueva cuenta se creará con permisos de <strong>Administrador</strong>
+                    </>
+                  )}
                 </Typography>
               </Paper>
             </Box>
