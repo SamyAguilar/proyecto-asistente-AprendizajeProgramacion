@@ -307,7 +307,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return false;
     } on HttpException catch (e) {
-      _setError(e.mensaje);
+      _setError(e.message);
       _setLoading(false);
       return false;
     } catch (e) {
@@ -336,7 +336,7 @@ class AuthProvider extends ChangeNotifier {
       case 500:
         return 'Error en el servidor. Intenta mas tarde';
       default:
-        if (e.mensaje.contains('conexion') || e.mensaje.contains('Connection')) {
+        if (e.message.contains('conexion') || e.message.contains('Connection')) {
           return 'Error de conexion. Verifica tu internet';
         }
         return 'Correo o contrasena incorrectos';
@@ -346,10 +346,10 @@ class AuthProvider extends ChangeNotifier {
   String _getRegisterErrorMessage(HttpException e) {
     switch (e.statusCode) {
       case 400:
-        if (e.mensaje.contains('email') || e.mensaje.contains('correo')) {
+        if (e.message.contains('email') || e.message.contains('correo')) {
           return 'El formato del correo no es valido';
         }
-        if (e.mensaje.contains('contrasena') || e.mensaje.contains('password')) {
+        if (e.message.contains('contrasena') || e.message.contains('password')) {
           return 'La contrasena no cumple los requisitos';
         }
         return 'Por favor completa todos los campos requeridos';
@@ -362,7 +362,7 @@ class AuthProvider extends ChangeNotifier {
       case 500:
         return 'Error en el servidor. Intenta mas tarde';
       default:
-        if (e.mensaje.contains('conexion') || e.mensaje.contains('Connection')) {
+        if (e.message.contains('conexion') || e.message.contains('Connection')) {
           return 'Error de conexion. Verifica tu internet';
         }
         return 'Error al crear la cuenta. Intenta de nuevo';

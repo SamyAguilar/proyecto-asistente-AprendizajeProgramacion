@@ -94,7 +94,7 @@ class ProfileScreen extends StatelessWidget {
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (auth.isLoading) {
-            return const LoadingWidget(mensaje: 'Cargando perfil...');
+            return const LoadingWidget(message: 'Cargando perfil...');
           }
 
           final usuario = auth.usuario;
