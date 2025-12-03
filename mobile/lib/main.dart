@@ -9,10 +9,17 @@ import 'services/storage_service.dart';
 import 'services/http_service.dart';
 import 'screens/splash_screen.dart';
 
-// 🆕 IMPORTA TUS PROVIDERS DE TOÑO
+// Providers de TONO
 import 'providers/materia_provider.dart';
 import 'providers/contenido_provider.dart';
 import 'providers/progreso_provider.dart';
+
+// NUEVO - Providers de PANCHO
+import 'providers/ejercicio_provider.dart';
+import 'providers/quiz_provider.dart';
+
+// NUEVO - Provider de LUZIA
+import 'providers/gemini_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,11 +37,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Providers de Sam
+        // Providers de SAM (Auth)
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()..init()),
-        
-        // 🆕 TUS PROVIDERS DE TOÑO
+
+        // Providers de TONO (Materias y Contenido)
         ChangeNotifierProvider(
           create: (_) => MateriaProvider(HttpService()),
         ),
@@ -43,6 +50,19 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ProgresoProvider(HttpService()),
+        ),
+
+        // NUEVO - Providers de PANCHO (Ejercicios y Quizzes)
+        ChangeNotifierProvider(
+          create: (_) => EjercicioProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => QuizProvider(),
+        ),
+
+        // NUEVO - Provider de LUZIA (Asistente IA)
+        ChangeNotifierProvider(
+          create: (_) => GeminiProvider(),
         ),
       ],
       child: Consumer<ThemeProvider>(

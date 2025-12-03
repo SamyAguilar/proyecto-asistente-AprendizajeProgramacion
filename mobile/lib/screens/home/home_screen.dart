@@ -1,13 +1,17 @@
 // lib/screens/home/home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../profile/profile_screen.dart';
 
-// ✅ IMPORTS CORRECTOS DE LAS PANTALLAS DE TOÑO
+// Imports de las pantallas de TONO
 import '../materias/materias_list_screen.dart';
-import '../materias/mis_materias_screen.dart'; // ✅ IMPORTA LAS PANTALLAS DE TOÑO
+import '../materias/mis_materias_screen.dart';
+
+// NUEVO - Import de AyudaScreen (LUZIA)
+import '../ayuda/ayuda_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,11 +23,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // ✅ PÁGINAS REALES DEL BOTTOM NAVIGATION BAR
+  // CORREGIDO - Paginas reales con AyudaScreen
   final List<Widget> _pages = [
     const _DashboardPage(),
-    const MateriasListScreen(), // ✅ PANTALLA REAL DE MATERIAS
-    const _AyudaPage(),
+    const MateriasListScreen(),
+    const AyudaScreen(),  // Pantalla real de LUZIA
     const ProfileScreen(),
   ];
 
@@ -54,8 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Materias',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.help_outline),
-            activeIcon: Icon(Icons.help),
+            icon: Icon(Icons.smart_toy_outlined),
+            activeIcon: Icon(Icons.smart_toy),
             label: 'Ayuda',
           ),
           BottomNavigationBarItem(
@@ -69,15 +73,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ============================================
-// PÁGINA DE DASHBOARD
-// ============================================
+// PAGINA DE DASHBOARD
 
 class _DashboardPage extends StatelessWidget {
   const _DashboardPage();
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inicio'),
@@ -94,20 +98,18 @@ class _DashboardPage extends StatelessWidget {
               children: [
                 // Saludo
                 Card(
+                  color: isDark ? Colors.grey[850] : null,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 30,
-                          backgroundColor: AppTheme.primaryColor,
-                          child: Text(
-                            usuario?.iniciales ?? 'U',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                          child: Icon(
+                            Icons.person,
+                            size: 30,
+                            color: Theme.of(context).primaryColor,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -116,17 +118,19 @@ class _DashboardPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '¡Hola, ${usuario?.nombre ?? 'Usuario'}!',
-                                style: const TextStyle(
+                                'Hola, ${usuario?.nombre ?? 'Usuario'}!',
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : null,
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              const Text(
-                                'Bienvenido al asistente de programación',
+                              Text(
+                                'Listo para aprender hoy?',
                                 style: TextStyle(
-                                  color: AppTheme.textSecondaryColor,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
                                 ),
                               ),
                             ],
@@ -136,115 +140,104 @@ class _DashboardPage extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 24),
 
-                // Estadísticas rápidas
-                const Text(
-                  'Tu Progreso',
+                // Estadisticas rapidas
+                Text(
+                  'Tu progreso',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : null,
                   ),
                 ),
                 const SizedBox(height: 12),
+
                 Row(
                   children: [
                     Expanded(
                       child: _buildStatCard(
                         icon: Icons.book,
                         title: 'Materias',
-                        value: '0',
-                        color: AppTheme.primaryColor,
+                        value: '3',
+                        color: Colors.blue,
+                        isDark: isDark,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildStatCard(
-                        icon: Icons.assignment_turned_in,
-                        title: 'Ejercicios',
-                        value: '0',
-                        color: AppTheme.secondaryColor,
+                        icon: Icons.check_circle,
+                        title: 'Completado',
+                        value: '45%',
+                        color: Colors.green,
+                        isDark: isDark,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.quiz,
-                        title: 'Quizzes',
-                        value: '0',
-                        color: AppTheme.accentColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.star,
-                        title: 'Promedio',
-                        value: '0.0',
-                        color: Colors.purple,
-                      ),
-                    ),
-                  ],
-                ),
+
                 const SizedBox(height: 24),
 
-                // Acciones rápidas
-                const Text(
-                  'Acciones Rápidas',
+                // Acciones rapidas
+                Text(
+                  'Acciones rapidas',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : null,
                   ),
                 ),
                 const SizedBox(height: 12),
+
                 _buildActionCard(
-                  icon: Icons.play_arrow,
-                  title: 'Continuar aprendiendo',
-                  subtitle: 'Retoma donde lo dejaste',
-                  color: AppTheme.primaryColor,
+                  icon: Icons.library_books,
+                  title: 'Explorar Materias',
+                  subtitle: 'Descubre nuevos temas',
+                  color: Colors.purple,
                   onTap: () {
-                    // TODO: Implementar navegación a última materia
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Continuar aprendiendo'),
-                      ),
-                    );
+                    // Cambiar a tab de Materias
+                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                    homeState?.setState(() {
+                      homeState._currentIndex = 1;
+                    });
                   },
+                  isDark: isDark,
                 ),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 12),
+
                 _buildActionCard(
-                  icon: Icons.school,
-                  title: 'Ver mis materias',
-                  subtitle: 'Revisa tu progreso en cada materia',
-                  color: AppTheme.secondaryColor,
-                  onTap: () {
-                    // ✅ NAVEGAR A MIS MATERIAS
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MisMateriasScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildActionCard(
-                  icon: Icons.help,
-                  title: 'Pedir ayuda',
-                  subtitle: 'El asistente de IA está disponible',
+                  icon: Icons.smart_toy,
+                  title: 'Pedir ayuda a LUZIA',
+                  subtitle: 'Asistente con IA',
                   color: AppTheme.accentColor,
                   onTap: () {
-                    // TODO: Navegar a ayuda (Lulu)
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Función pendiente: Asistente IA (Lulu)'),
-                      ),
-                    );
+                    // Cambiar a tab de LUZIA
+                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                    homeState?.setState(() {
+                      homeState._currentIndex = 2;
+                    });
                   },
+                  isDark: isDark,
+                ),
+
+                const SizedBox(height: 12),
+
+                _buildActionCard(
+                  icon: Icons.quiz,
+                  title: 'Practicar con ejercicios',
+                  subtitle: 'Refuerza tus conocimientos',
+                  color: Colors.orange,
+                  onTap: () {
+                    // Ir a materias para seleccionar ejercicios
+                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                    homeState?.setState(() {
+                      homeState._currentIndex = 1;
+                    });
+                  },
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -259,8 +252,10 @@ class _DashboardPage extends StatelessWidget {
     required String title,
     required String value,
     required Color color,
+    required bool isDark,
   }) {
     return Card(
+      color: isDark ? Colors.grey[850] : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -282,9 +277,9 @@ class _DashboardPage extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.textSecondaryColor,
+                color: isDark ? Colors.grey[400] : AppTheme.textSecondaryColor,
               ),
             ),
           ],
@@ -299,13 +294,15 @@ class _DashboardPage extends StatelessWidget {
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return Card(
+      color: isDark ? Colors.grey[850] : null,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withOpacity(isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -315,58 +312,22 @@ class _DashboardPage extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : null,
           ),
         ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-// ============================================
-// PÁGINA DE AYUDA (Placeholder para Lulu)
-// ============================================
-
-class _AyudaPage extends StatelessWidget {
-  const _AyudaPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ayuda'),
-        automaticallyImplyLeading: false,
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.help_outline,
-              size: 64,
-              color: AppTheme.textSecondaryColor,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Asistente de IA',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Próximamente - Implementar por Lulu',
-              style: TextStyle(
-                color: AppTheme.textSecondaryColor,
-              ),
-            ),
-          ],
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : null,
+          ),
         ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: isDark ? Colors.grey[400] : null,
+        ),
+        onTap: onTap,
       ),
     );
   }

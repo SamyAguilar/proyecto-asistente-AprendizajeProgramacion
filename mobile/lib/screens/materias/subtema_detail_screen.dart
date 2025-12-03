@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/subtema_model.dart';
+// NUEVO - Imports para navegacion a PANCHO
+import '../ejercicios/ejercicios_list_screen.dart';
+import '../quiz/quiz_intro_screen.dart';
 
 class SubtemaDetailScreen extends StatelessWidget {
   final SubtemaModel subtema;
@@ -9,6 +12,8 @@ class SubtemaDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Subtema ${subtema.orden}'),
@@ -21,7 +26,14 @@ class SubtemaDetailScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
-              color: Theme.of(context).primaryColor,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -37,17 +49,18 @@ class SubtemaDetailScreen extends StatelessWidget {
               ),
             ),
 
-            // Descripción
+            // Descripcion
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Descripción',
+                  Text(
+                    'Descripcion',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -55,16 +68,17 @@ class SubtemaDetailScreen extends StatelessWidget {
                     subtema.descripcion,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey[700],
+                      color: isDark ? Colors.grey[400] : Colors.grey[700],
                       height: 1.5,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Contenido Detallado',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -72,7 +86,7 @@ class SubtemaDetailScreen extends StatelessWidget {
                     subtema.contenidoDetalle,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey[700],
+                      color: isDark ? Colors.grey[400] : Colors.grey[700],
                       height: 1.5,
                     ),
                   ),
@@ -82,18 +96,16 @@ class SubtemaDetailScreen extends StatelessWidget {
 
             const Divider(height: 1),
 
-            // ✅ BOTONES DE ACCIÓN - CONEXIÓN CON PANCHO
+            // BOTONES DE ACCION - NAVEGACION ACTIVADA
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Botón Ver Ejercicios
+                  // Boton Ver Ejercicios - NAVEGACION ACTIVA
                   ElevatedButton.icon(
                     onPressed: () {
-                      // ✅ NAVEGACIÓN A MÓDULO DE PANCHO - EJERCICIOS
-                      // Cuando Pancho tenga su pantalla lista, descomenta esto:
-                      /*
+                      // NAVEGACION A MODULO DE PANCHO - EJERCICIOS (ACTIVADA)
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -101,18 +113,6 @@ class SubtemaDetailScreen extends StatelessWidget {
                             subtemaId: subtema.id,
                             subtemaName: subtema.nombre,
                           ),
-                        ),
-                      );
-                      */
-                      
-                      // Mientras tanto, mostramos un mensaje
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Navegando a ejercicios del subtema: ${subtema.nombre}',
-                          ),
-                          backgroundColor: Colors.blue,
-                          duration: const Duration(seconds: 2),
                         ),
                       );
                     },
@@ -124,15 +124,13 @@ class SubtemaDetailScreen extends StatelessWidget {
                       foregroundColor: Colors.white,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
-                  // Botón Tomar Quiz
+
+                  // Boton Tomar Quiz - NAVEGACION ACTIVA
                   OutlinedButton.icon(
                     onPressed: () {
-                      // ✅ NAVEGACIÓN A MÓDULO DE PANCHO - QUIZ
-                      // Cuando Pancho tenga su pantalla lista, descomenta esto:
-                      /*
+                      // NAVEGACION A MODULO DE PANCHO - QUIZ (ACTIVADA)
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -140,18 +138,6 @@ class SubtemaDetailScreen extends StatelessWidget {
                             subtemaId: subtema.id,
                             subtemaName: subtema.nombre,
                           ),
-                        ),
-                      );
-                      */
-                      
-                      // Mientras tanto, mostramos un mensaje
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Navegando a quiz del subtema: ${subtema.nombre}',
-                          ),
-                          backgroundColor: Colors.orange,
-                          duration: const Duration(seconds: 2),
                         ),
                       );
                     },
@@ -165,37 +151,29 @@ class SubtemaDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            // Info adicional
-            Container(
-              margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Colors.blue[700],
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Completa los ejercicios y el quiz para avanzar al siguiente subtema',
-                      style: TextStyle(
-                        color: Colors.blue[900],
-                        fontSize: 14,
-                        height: 1.4,
+                  const SizedBox(height: 12),
+
+                  // Boton Ver Progreso (opcional)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      // Mostrar progreso del subtema
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Progreso del subtema: ${subtema.nombre}',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.trending_up),
+                    label: const Text('Ver mi Progreso'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      side: const BorderSide(
+                        color: Colors.green,
+                        width: 2,
                       ),
                     ),
                   ),
