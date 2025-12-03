@@ -46,7 +46,8 @@ export const generalRateLimiter = rateLimit({
  */
 export const authRateLimiter = rateLimit({
   //windowMs: 15 * 60 * 1000, // 15 minutos
-  windowMs: 15 * 60 * 0, // 15 minutos
+  //windowMs: 15 * 60 * 0, // 15 minutos
+   windowMs: 0 * 60 * 0, // 15 minutos
   max: 55, // 5 intentos por ventana
   message: {
     error: 'Demasiados intentos de inicio de sesión',
@@ -73,8 +74,9 @@ export const authRateLimiter = rateLimit({
  * Previene spam de cuentas
  */
 export const registroRateLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // 3 registros por hora
+  //windowMs: 60 * 60 * 1000, // 1 hora
+   windowMs: (60 * 60 * 1000)*0, // 1 hora
+  max: 30, // 3 registros por hora
   message: {
     error: 'Demasiados registros',
     message: 'Has excedido el límite de registros. Por favor, intenta en 1 hora.',
@@ -99,7 +101,7 @@ export const registroRateLimiter = rateLimit({
  * Previene spam de soluciones
  */
 export const ejerciciosRateLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutos
+  windowMs: (10 * 60 * 1000)*0, // 10 minutos
   max: 20, // 20 envíos por ventana
   keyGenerator: (req: Request) => {
     // Usar ID de usuario si está autenticado, sino usar IP
@@ -127,7 +129,7 @@ export const ejerciciosRateLimiter = rateLimit({
  * Límite: 30 respuestas por 10 minutos por usuario
  */
 export const quizRateLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 minutos
+  windowMs: (10 * 60 * 1000)*0, // 10 minutos
   max: 30, // 30 respuestas por ventana
   keyGenerator: (req: Request) => {
     return (req as any).userId?.toString() || req.ip || 'unknown';

@@ -1,3 +1,4 @@
+// mobile/lib/providers/progreso_provider.dart
 import 'package:flutter/foundation.dart';
 import '../models/progreso_model.dart';
 import '../services/http_service.dart';
@@ -23,7 +24,7 @@ class ProgresoProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Métodos de utilidad para obtener progreso y estado de materias
+  // Metodos de utilidad para obtener progreso y estado de materias
 
   /// Obtiene el porcentaje de progreso de una materia
   /// Si no existe, devuelve 0.0
@@ -70,7 +71,7 @@ class ProgresoProvider with ChangeNotifier {
           }
       );
 
-      // Depuración detallada de la solicitud y respuesta
+      // Depuracion detallada de la solicitud y respuesta
       debugPrint('Datos enviados para actualizar progreso: {');
       debugPrint('  temaId: $temaId');
       debugPrint('  estado: ${progreso == 100 ? 'completado' : progreso > 0 ? 'en_progreso' : 'no_iniciado'}');
@@ -94,7 +95,7 @@ class ProgresoProvider with ChangeNotifier {
 
           notifyListeners();
         } else {
-          debugPrint('Respuesta sin éxito: ${response.data}');
+          debugPrint('Respuesta sin exito: ${response.data}');
         }
       }
     } catch (e) {
@@ -108,7 +109,7 @@ class ProgresoProvider with ChangeNotifier {
     try {
       final response = await _httpService.post('/progreso/calcular/$temaId');
 
-      debugPrint('Respuesta de cálculo de progreso: $response');
+      debugPrint('Respuesta de calculo de progreso: $response');
 
       if (response.data != null && response.data['success'] == true) {
         final progresoActualizado = ProgresoModel.fromJson(response.data['data']);
@@ -167,7 +168,7 @@ class ProgresoProvider with ChangeNotifier {
     }
   }
 
-  /// Obtiene el progreso de una materia específica
+  /// Obtiene el progreso de una materia especifica
   /// [materiaId]: Identificador de la materia
   Future<void> obtenerProgresoMateria(int materiaId) async {
     _isLoading = true;
@@ -180,10 +181,11 @@ class ProgresoProvider with ChangeNotifier {
       debugPrint('Response progreso materia $materiaId: ${response.data}');
 
       if (response.data != null && response.data['success'] == true) {
-        final progresoModel = ProgresoModel.fromJson(response.data['data']);
+        final progresoData = response.data['data'];
 
-        _progresosPorMateria[materiaId] = progresoModel;
-        _porcentajesPorMateria[materiaId] = progresoModel.porcentajeCompletado;
+        // Actualizar porcentaje de materia
+        _porcentajesPorMateria[materiaId] =
+            (progresoData['promedioProgreso'] as num?)?.toDouble() ?? 0.0;
 
         debugPrint('Progreso materia $materiaId: ${getProgresoPorMateria(materiaId)}%');
       }
@@ -196,9 +198,12 @@ class ProgresoProvider with ChangeNotifier {
     }
   }
 
-  /// Obtiene el progreso de un tema específico
+  /// NUEVO METODO: Obtiene el progreso de un tema especifico
   /// [temaId]: Identificador del tema
+  /// Este metodo es CLAVE para refrescar el progreso despues de resolver ejercicios
   Future<void> obtenerProgresoTema(int temaId) async {
+    debugPrint('=== OBTENIENDO PROGRESO TEMA $temaId ===');
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -209,12 +214,13 @@ class ProgresoProvider with ChangeNotifier {
       debugPrint('Response progreso tema $temaId: ${response.data}');
 
       if (response.data != null && response.data['success'] == true) {
-        final progresoModel = ProgresoModel.fromJson(response.data['data']);
+        final progresoData = response.data['data'];
+        final progresoModel = ProgresoModel.fromJson(progresoData);
 
         _progresosPorTema[temaId] = progresoModel;
         _porcentajesPorTema[temaId] = progresoModel.porcentajeCompletado;
 
-        debugPrint('Progreso tema $temaId: ${getProgresoPorTema(temaId)}%');
+        debugPrint('Progreso tema $temaId actualizado: ${getProgresoPorTema(temaId)}%');
       }
     } catch (e) {
       _error = e.toString();
@@ -275,7 +281,7 @@ class ProgresoProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Obtiene los intentos de ejercicios para un subtema específico
+  /// Obtiene los intentos de ejercicios para un subtema especifico
   /// [subtemaId]: Identificador del subtema
   Future<List<dynamic>> obtenerIntentosSubtema(int subtemaId) async {
     try {
