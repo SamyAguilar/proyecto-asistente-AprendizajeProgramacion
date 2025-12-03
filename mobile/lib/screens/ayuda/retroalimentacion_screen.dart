@@ -80,7 +80,7 @@ class _RetroalimentacionScreenState extends State<RetroalimentacionScreen> {
 
           if (gemini.error != null) {
             return ErrorDisplayWidget(
-              message: gemini.error!,
+              mensaje: gemini.error!,
               onRetry: _cargarRetroalimentaciones,
             );
           }

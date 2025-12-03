@@ -9,6 +9,7 @@ android {
     namespace = "com.example.mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    buildToolsVersion = "34.0.0"  // ← AGREGAR ESTA LÍNEA
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
