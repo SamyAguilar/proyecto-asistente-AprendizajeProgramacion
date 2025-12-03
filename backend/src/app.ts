@@ -30,6 +30,7 @@ import materiaAdminRoutes from './routes/materia-admin.routes';
 import temaAdminRoutes from './routes/tema-admin.routes';
 import subtemaAdminRoutes from './routes/subtema-admin.routes';
 import ejercicioAdminRoutes from './routes/ejercicio-admin.routes';
+import usuarioAdminRoutes from './routes/usuario-admin.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -125,6 +126,9 @@ app.use('/api/v1/admin/subtemas', subtemaAdminRoutes);
 
 // Rutas de administración de Ejercicios (requiere auth + rol admin/profesor)
 app.use('/api/v1/admin/ejercicios', ejercicioAdminRoutes);
+
+// Rutas de administración de Usuarios (requiere auth + rol admin)
+app.use('/api/v1/admin', usuarioAdminRoutes);
 
 // ============================================
 // MANEJO DE ERRORES

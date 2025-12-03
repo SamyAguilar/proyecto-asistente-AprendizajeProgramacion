@@ -21,6 +21,8 @@ import {
   Menu as MenuIcon,
   ExitToApp as LogoutIcon,
   School as SchoolIcon,
+  People as PeopleIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import React, { useState } from 'react';
 
@@ -58,6 +60,18 @@ export const Dashboard = () => {
       icon: <BookIcon />,
       path: '/dashboard/materias',
       description: 'Gestionar materias',
+    },
+    {
+      text: 'Usuarios',
+      icon: <PeopleIcon />,
+      path: '/dashboard/usuarios',
+      description: 'Gestión de usuarios del sistema',
+    },
+    {
+      text: 'Crear Admin',
+      icon: <PersonAddIcon />,
+      path: '/dashboard/crear-admin',
+      description: 'Crear nuevo administrador',
     },
   ];
 

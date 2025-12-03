@@ -27,6 +27,10 @@ import { SubtemaForm } from './pages/subtemas/SubtemaForm';
 import { EjerciciosList } from './pages/ejercicios/EjerciciosList';
 import { EjercicioForm } from './pages/ejercicios/EjercicioForm';
 
+// Usuarios Admin
+import { UsuariosList } from './pages/usuarios/UsuariosList';
+import { CrearAdmin } from './pages/usuarios/CrearAdmin';
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('access_token');
@@ -78,6 +82,10 @@ function App() {
             <Route path="ejercicios/:subtemaId" element={<EjerciciosList />} />
             <Route path="ejercicios/crear/:subtemaId" element={<EjercicioForm />} />
             <Route path="ejercicios/editar/:id" element={<EjercicioForm />} />
+            
+            {/* === USUARIOS ADMIN ROUTES === */}
+            <Route path="usuarios" element={<UsuariosList />} />
+            <Route path="crear-admin" element={<CrearAdmin />} />
           </Route>
 
           {/* Redirect root to dashboard */}

@@ -83,10 +83,17 @@ export const EjercicioForm = () => {
     name: 'opcionesRespuesta',
   });
 
-  const { fields: respuestasFields, append: appendRespuesta, remove: removeRespuesta } = useFieldArray({
-    control,
-    name: 'respuestasCorrectas',
-  });
+  // Manejo manual de respuestas para arrays de strings simples
+  const respuestasCorrectas = watch('respuestasCorrectas') || [''];
+  
+  const agregarRespuesta = () => {
+    setValue('respuestasCorrectas', [...respuestasCorrectas, '']);
+  };
+  
+  const eliminarRespuesta = (index: number) => {
+    const nuevasRespuestas = respuestasCorrectas.filter((_, i) => i !== index);
+    setValue('respuestasCorrectas', nuevasRespuestas.length > 0 ? nuevasRespuestas : ['']);
+  };
 
   const tipoEjercicio = watch('tipoEjercicio');
   const textoConEspacios = watch('textoConEspacios');
@@ -447,8 +454,8 @@ export const EjercicioForm = () => {
 
                 <Typography variant="subtitle1">Respuestas Correctas (en orden):</Typography>
                 
-                {respuestasFields.map((field, index) => (
-                  <Box key={field.id} display="flex" gap={2} alignItems="center">
+                {respuestasCorrectas.map((_, index) => (
+                  <Box key={index} display="flex" gap={2} alignItems="center">
                     <Chip label={index + 1} color="primary" size="small" />
                     <TextField
                       fullWidth
@@ -457,8 +464,8 @@ export const EjercicioForm = () => {
                       required
                       placeholder="Escribe la respuesta correcta"
                     />
-                    {respuestasFields.length > 1 && (
-                      <IconButton onClick={() => removeRespuesta(index)} color="error">
+                    {respuestasCorrectas.length > 1 && (
+                      <IconButton onClick={() => eliminarRespuesta(index)} color="error">
                         <Delete />
                       </IconButton>
                     )}
@@ -467,7 +474,7 @@ export const EjercicioForm = () => {
 
                 <Button
                   startIcon={<Add />}
-                  onClick={() => appendRespuesta()}
+                  onClick={agregarRespuesta}
                   variant="outlined"
                 >
                   Agregar Respuesta
