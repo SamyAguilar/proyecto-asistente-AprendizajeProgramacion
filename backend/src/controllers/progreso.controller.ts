@@ -236,4 +236,34 @@ export class ProgresoController {
       });
     }
   };
+
+  /**
+   * GET /api/v1/progreso/general
+   * Obtener progreso general del estudiante
+   */
+  obtenerProgresoGeneral = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const usuarioId = (req as any).userId;
+
+      if (!usuarioId) {
+        res.status(401).json({
+          error: 'Usuario no autenticado'
+        });
+        return;
+      }
+
+      const progresoGeneral = await this.progresoService.calcularProgresoGeneral(usuarioId);
+
+      res.status(200).json({
+        success: true,
+        data: progresoGeneral
+      });
+    } catch (error: any) {
+      logError('Error al obtener progreso general:', error);
+      res.status(500).json({
+        error: 'Error interno al obtener progreso general',
+        mensaje: error.message
+      });
+    }
+  };
 }

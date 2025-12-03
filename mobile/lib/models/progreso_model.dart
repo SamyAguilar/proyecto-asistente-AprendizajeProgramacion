@@ -18,6 +18,15 @@ class ProgresoModel {
   });
 
   factory ProgresoModel.fromJson(Map<String, dynamic> json) {
+    // Manejar porcentajeCompletado que puede venir como String o Number desde backend
+    double parsePorcentaje(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return ProgresoModel(
       id: json['id'] as int,
       usuarioId: json['usuarioId'] as int,
@@ -25,7 +34,7 @@ class ProgresoModel {
       temaId: json['temaId'] as int?,
       subtemaId: json['subtemaId'] as int?,
       estado: json['estado'] as String,
-      porcentajeCompletado: (json['porcentajeCompletado'] ?? 0).toDouble(),
+      porcentajeCompletado: parsePorcentaje(json['porcentajeCompletado']),
     );
   }
 

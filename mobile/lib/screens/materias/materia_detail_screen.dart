@@ -31,8 +31,29 @@ class _MateriaDetailScreenState extends State<MateriaDetailScreen> {
     final contenidoProvider = context.read<ContenidoProvider>();
     final progresoProvider = context.read<ProgresoProvider>();
 
+    // Cargar los temas
     await contenidoProvider.listarTemasConProgreso(widget.materia.id);
-    await progresoProvider.obtenerProgresoMateria(widget.materia.id);
+
+    // FORZAR recarga del progreso de cada tema (siempre actualizado)
+    final temas = contenidoProvider.temas;
+    for (var tema in temas) {
+      await progresoProvider.obtenerProgresoTema(tema.id, forceRefresh: true);
+    }
+  }
+
+  Future<void> _refrescarDatos() async {
+    final contenidoProvider = context.read<ContenidoProvider>();
+    final progresoProvider = context.read<ProgresoProvider>();
+
+    await contenidoProvider.listarTemasConProgreso(widget.materia.id);
+
+    // Forzar recarga de progreso de materia y cada tema
+    await progresoProvider.obtenerProgresoMateria(widget.materia.id, forceRefresh: true);
+
+    final temas = contenidoProvider.temas;
+    for (var tema in temas) {
+      await progresoProvider.obtenerProgresoTema(tema.id, forceRefresh: true);
+    }
   }
 
   Future<void> _matricularMateria() async {
@@ -84,187 +105,191 @@ class _MateriaDetailScreenState extends State<MateriaDetailScreen> {
       appBar: AppBar(
         title: Text(widget.materia.codigo),
       ),
-      body: Consumer3<MateriaProvider, ContenidoProvider, ProgresoProvider>(
-        builder: (context, materiaProvider, contenidoProvider,
-            progresoProvider, child) {
-          final isMatriculado = materiaProvider.misMaterias
-              .any((m) => m.id == widget.materia.id);
-          final progreso =
-              progresoProvider.getProgresoPorMateria(widget.materia.id);
-          final temas = contenidoProvider.temas;
+      body: RefreshIndicator(
+        onRefresh: _refrescarDatos,
+        child: Consumer3<MateriaProvider, ContenidoProvider, ProgresoProvider>(
+          builder: (context, materiaProvider, contenidoProvider,
+              progresoProvider, child) {
+            final isMatriculado = materiaProvider.misMaterias
+                .any((m) => m.id == widget.materia.id);
+            final progreso =
+            progresoProvider.getProgresoPorMateria(widget.materia.id);
+            final temas = contenidoProvider.temas;
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header con info de la materia
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  color: Theme.of(context).primaryColor,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.materia.nombre,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _buildInfoChip(
-                            Icons.school,
-                            'Semestre ${widget.materia.semestre}',
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header con info de la materia
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    color: Theme.of(context).primaryColor,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.materia.nombre,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 12),
-                          _buildInfoChip(
-                            Icons.star,
-                            '${widget.materia.creditos} créditos',
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            _buildInfoChip(
+                              Icons.school,
+                              'Semestre ${widget.materia.semestre}',
+                            ),
+                            const SizedBox(width: 12),
+                            _buildInfoChip(
+                              Icons.star,
+                              '${widget.materia.creditos} créditos',
+                            ),
+                          ],
+                        ),
+                        if (isMatriculado) ...[
+                          const SizedBox(height: 16),
+                          ProgresoBar(
+                            progreso: progreso,
+                            height: 10,
+                            useDynamicColors: true, // Usar colores dinámicos
+                            backgroundColor: Colors.white.withOpacity(0.3),
                           ),
                         ],
-                      ),
-                      if (isMatriculado) ...[
-                        const SizedBox(height: 16),
-                        ProgresoBar(
-                          progreso: progreso,
-                          height: 10,
-                          color: Colors.white,
-                        ),
                       ],
-                    ],
-                  ),
-                ),
-
-                // Descripción
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Descripción',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.materia.descripcion ?? 'Sin descripción disponible',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[700],
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Botón de matricular (si no está matriculado)
-                if (!isMatriculado)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: materiaProvider.isLoading
-                            ? null
-                            : _matricularMateria,
-                        icon: const Icon(Icons.add_circle_outline),
-                        label: const Text('Matricular Materia'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(16),
-                        ),
-                      ),
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                  // Descripción
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Descripción',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.materia.descripcion ?? 'Sin descripción disponible',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[700],
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                // Lista de temas
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Temas',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  // Botón de matricular (si no está matriculado)
+                  if (!isMatriculado)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: materiaProvider.isLoading
+                              ? null
+                              : _matricularMateria,
+                          icon: const Icon(Icons.add_circle_outline),
+                          label: const Text('Matricular Materia'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                          ),
                         ),
                       ),
-                      if (temas.isNotEmpty)
-                        Text(
-                          '${temas.length} temas',
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Lista de temas
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Temas',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (temas.isNotEmpty)
+                          Text(
+                            '${temas.length} temas',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (contenidoProvider.isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (temas.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Text(
+                          'No hay temas disponibles',
+                          style: TextStyle(
                             color: Colors.grey[600],
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                if (contenidoProvider.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (temas.isEmpty)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Text(
-                        'No hay temas disponibles',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                        ),
                       ),
-                    ),
-                  )
-                else
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: temas.length,
-                    itemBuilder: (context, index) {
-                      final tema = temas[index];
-                      final progresoTema =
-                          progresoProvider.getProgresoPorTema(tema.id);
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      itemCount: temas.length,
+                      itemBuilder: (context, index) {
+                        final tema = temas[index];
+                        final progresoTema =
+                        progresoProvider.getProgresoPorTema(tema.id);
 
-                      return TemaCard(
-                        tema: tema,
-                        progreso: progresoTema,
-                        onTap: () {
-                          // ✅ NAVEGACIÓN CORREGIDA: Pasamos el objeto tema completo
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TemaDetailScreen(
-                                tema: tema,
+                        return TemaCard(
+                          tema: tema,
+                          progreso: progresoTema,
+                          onTap: () {
+                            // ✅ NAVEGACIÓN CORREGIDA: Pasamos el objeto tema completo
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TemaDetailScreen(
+                                  tema: tema,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                            );
+                          },
+                        );
+                      },
+                    ),
 
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        },
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

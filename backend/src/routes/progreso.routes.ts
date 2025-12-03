@@ -57,4 +57,26 @@ router.put(
   (req, res) => progresoController.actualizarProgreso(req, res)
 );
 
+/**
+ * @route   POST /api/v1/progreso/calcular/:temaId
+ * @desc    Calcular automaticamente el progreso de un tema
+ * @access  Private (requiere token JWT)
+ */
+router.post(
+  '/calcular/:temaId',
+  authMiddleware,
+  (req, res) => progresoController.calcularProgresoTema(req, res)
+);
+
+/**
+ * @route   GET /api/v1/progreso/general
+ * @desc    Obtener progreso general del estudiante
+ * @access  Private (requiere token JWT)
+ */
+router.get(
+  '/general',
+  authMiddleware,
+  (req, res) => progresoController.obtenerProgresoGeneral(req, res)
+);
+
 export default router;

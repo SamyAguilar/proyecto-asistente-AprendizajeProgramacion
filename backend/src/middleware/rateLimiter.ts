@@ -76,7 +76,7 @@ export const authRateLimiter = rateLimit({
 export const registroRateLimiter = rateLimit({
   //windowMs: 60 * 60 * 1000, // 1 hora
    windowMs: (60 * 60 * 1000)*0, // 1 hora
-  max: 30, // 3 registros por hora
+  max: 90, // 3 registros por hora
   message: {
     error: 'Demasiados registros',
     message: 'Has excedido el límite de registros. Por favor, intenta en 1 hora.',

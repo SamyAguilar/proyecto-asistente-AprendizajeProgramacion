@@ -32,8 +32,12 @@ export class ProgresoService {
   /**
    * Obtener progreso de un estudiante en un tema especifico
    * Endpoint: GET /api/v1/progreso/tema/:temaId
+   * Si no existe registro en tabla progreso, calcula basado en ejercicios
    */
   async obtenerProgresoEnTema(usuarioId: number, temaId: number): Promise<ProgresoDto | null> {
+    console.log(`🔍 Buscando progreso: usuarioId=${usuarioId}, temaId=${temaId}`);
+    
+    // Primero intentar obtener de la tabla progreso
     const query = `
       SELECT 
         p.*,
@@ -46,23 +50,88 @@ export class ProgresoService {
     `;
 
     const resultado = await AppDataSource.query(query, [usuarioId, temaId]);
+    console.log(`📊 Registros en tabla progreso: ${resultado.length}`);
 
-    if (resultado.length === 0) {
+    // Si existe en la tabla, devolverlo
+    if (resultado.length > 0) {
+      const p = resultado[0];
+      console.log(`✅ Progreso encontrado en BD: ${p.porcentaje_completado}%`);
+      return {
+        id: p.id,
+        usuarioId: p.usuario_id,
+        temaId: p.tema_id,
+        subtemaId: p.subtema_id,
+        estado: p.estado,
+        porcentajeCompletado: parseFloat(p.porcentaje_completado) || 0,
+        intentos: p.intentos || 0,
+        fechaUltimoAcceso: p.fecha_ultimo_acceso,
+        temaNombre: p.tema_nombre,
+        subtemaNombre: p.subtema_nombre
+      };
+    }
+
+    console.log(`🔢 No hay registro en BD, calculando basado en ejercicios...`);
+    
+    // Si NO existe, calcular progreso basado en ejercicios
+    const queryCalcular = `
+      SELECT 
+        t.id as tema_id,
+        t.nombre as tema_nombre,
+        COUNT(DISTINCT e.id) as total_ejercicios,
+        COUNT(DISTINCT CASE WHEN ie.resultado = 'correcto' THEN ie.ejercicio_id END) as ejercicios_correctos
+      FROM temas t
+      LEFT JOIN subtemas s ON s.tema_id = t.id
+      LEFT JOIN ejercicios e ON e.subtema_id = s.id
+      LEFT JOIN intentos_ejercicios ie ON ie.ejercicio_id = e.id 
+        AND ie.usuario_id = $1
+        AND ie.id IN (
+          SELECT MAX(id) 
+          FROM intentos_ejercicios 
+          WHERE usuario_id = $1 
+          GROUP BY ejercicio_id
+        )
+      WHERE t.id = $2
+      GROUP BY t.id, t.nombre
+    `;
+
+    const resultadoCalculo = await AppDataSource.query(queryCalcular, [usuarioId, temaId]);
+
+    if (resultadoCalculo.length === 0) {
+      console.log(`❌ Tema ${temaId} no encontrado`);
       return null;
     }
 
-    const p = resultado[0];
+    const calc = resultadoCalculo[0];
+    const totalEjercicios = parseInt(calc.total_ejercicios) || 0;
+    const ejerciciosCorrectos = parseInt(calc.ejercicios_correctos) || 0;
+    const porcentajeCompletado = totalEjercicios > 0 
+      ? Math.round((ejerciciosCorrectos / totalEjercicios) * 100)
+      : 0;
+
+    console.log(`📊 Cálculo: ${ejerciciosCorrectos}/${totalEjercicios} ejercicios = ${porcentajeCompletado}%`);
+
+    // Determinar estado
+    let estado: EstadoProgreso;
+    if (porcentajeCompletado === 0) {
+      estado = EstadoProgreso.NO_INICIADO;
+    } else if (porcentajeCompletado === 100) {
+      estado = EstadoProgreso.COMPLETADO;
+    } else {
+      estado = EstadoProgreso.EN_PROGRESO;
+    }
+
+    // Devolver progreso calculado (sin guardarlo en BD)
     return {
-      id: p.id,
-      usuarioId: p.usuario_id,
-      temaId: p.tema_id,
-      subtemaId: p.subtema_id,
-      estado: p.estado,
-      porcentajeCompletado: p.porcentaje_completado || 0,
-      intentos: p.intentos || 0,
-      fechaUltimoAcceso: p.fecha_ultimo_acceso,
-      temaNombre: p.tema_nombre,
-      subtemaNombre: p.subtema_nombre
+      id: 0, // ID temporal
+      usuarioId: usuarioId,
+      temaId: calc.tema_id,
+      subtemaId: null,
+      estado: estado,
+      porcentajeCompletado: porcentajeCompletado,
+      intentos: ejerciciosCorrectos,
+      fechaUltimoAcceso: new Date(),
+      temaNombre: calc.tema_nombre,
+      subtemaNombre: null
     };
   }
 
@@ -151,15 +220,21 @@ export class ProgresoService {
     const statsQuery = `
       SELECT 
         COUNT(DISTINCT e.id) as total_ejercicios,
-        COUNT(DISTINCT pq.id) as total_preguntas,
-        COUNT(DISTINCT CASE WHEN ie.resultado = 'correcto' THEN ie.ejercicio_id END) as ejercicios_correctos,
-        COUNT(DISTINCT CASE WHEN iq.es_correcta = true THEN iq.pregunta_id END) as preguntas_correctas
+        COUNT(DISTINCT CASE 
+          WHEN ie.resultado = 'correcto' 
+          THEN ie.ejercicio_id 
+        END) as ejercicios_correctos
       FROM temas t
       LEFT JOIN subtemas s ON s.tema_id = t.id
       LEFT JOIN ejercicios e ON e.subtema_id = s.id
-      LEFT JOIN preguntas_quiz pq ON pq.subtema_id = s.id
-      LEFT JOIN intentos_ejercicios ie ON ie.ejercicio_id = e.id AND ie.usuario_id = $1
-      LEFT JOIN intentos_quiz iq ON iq.pregunta_id = pq.id AND iq.usuario_id = $1
+      LEFT JOIN intentos_ejercicios ie ON ie.ejercicio_id = e.id 
+        AND ie.usuario_id = $1
+        AND ie.id IN (
+          SELECT MAX(id) 
+          FROM intentos_ejercicios 
+          WHERE usuario_id = $1 
+          GROUP BY ejercicio_id
+        )
       WHERE t.id = $2
     `;
 
@@ -169,19 +244,14 @@ export class ProgresoService {
       return;
     }
 
-    const totalEjercicios = parseInt(stats[0].total_ejercicios);
-    const totalPreguntas = parseInt(stats[0].total_preguntas);
-    const ejerciciosCorrectos = parseInt(stats[0].ejercicios_correctos);
-    const preguntasCorrectas = parseInt(stats[0].preguntas_correctas);
+    const totalEjercicios = parseInt(stats[0].total_ejercicios) || 0;
+    const ejerciciosCorrectos = parseInt(stats[0].ejercicios_correctos) || 0;
 
-    const totalItems = totalEjercicios + totalPreguntas;
-    const totalCorrectos = ejerciciosCorrectos + preguntasCorrectas;
-
-    if (totalItems === 0) {
+    if (totalEjercicios === 0) {
       return;
     }
 
-    const porcentaje = Math.round((totalCorrectos / totalItems) * 100);
+    const porcentaje = Math.round((ejerciciosCorrectos / totalEjercicios) * 100);
     
     let estado: 'no_iniciado' | 'en_progreso' | 'completado';
     if (porcentaje === 0) {
@@ -226,7 +296,7 @@ export class ProgresoService {
       temaId: p.tema_id,
       subtemaId: p.subtema_id,
       estado: p.estado,
-      porcentajeCompletado: p.porcentaje_completado || 0,
+      porcentajeCompletado: parseFloat(p.porcentaje_completado) || 0,
       intentos: p.intentos || 0,
       fechaUltimoAcceso: p.fecha_ultimo_acceso,
       temaNombre: p.tema_nombre,
@@ -239,17 +309,25 @@ export class ProgresoService {
    * Endpoint: GET /api/v1/progreso/materia/:materiaId
    */
   async obtenerProgresoEnMateria(usuarioId: number, materiaId: number): Promise<any> {
+    // Calcular progreso basado en ejercicios (NO en tabla progreso)
     const query = `
       SELECT 
         m.id as materia_id,
         m.nombre as materia_nombre,
-        COUNT(DISTINCT t.id) as total_temas,
-        COUNT(DISTINCT CASE WHEN p.estado = 'completado' THEN t.id END) as temas_completados,
-        COUNT(DISTINCT CASE WHEN p.estado = 'en_progreso' THEN t.id END) as temas_en_progreso,
-        ROUND(AVG(CASE WHEN p.porcentaje_completado IS NOT NULL THEN p.porcentaje_completado ELSE 0 END), 2) as promedio_progreso
+        COUNT(DISTINCT e.id) as total_ejercicios,
+        COUNT(DISTINCT CASE WHEN ie.resultado = 'correcto' THEN ie.ejercicio_id END) as ejercicios_correctos
       FROM materias m
       INNER JOIN temas t ON t.materia_id = m.id
-      LEFT JOIN progreso p ON p.tema_id = t.id AND p.usuario_id = $1
+      LEFT JOIN subtemas s ON s.tema_id = t.id
+      LEFT JOIN ejercicios e ON e.subtema_id = s.id
+      LEFT JOIN intentos_ejercicios ie ON ie.ejercicio_id = e.id 
+        AND ie.usuario_id = $1
+        AND ie.id IN (
+          SELECT MAX(id) 
+          FROM intentos_ejercicios 
+          WHERE usuario_id = $1 
+          GROUP BY ejercicio_id
+        )
       WHERE m.id = $2
       GROUP BY m.id, m.nombre
     `;
@@ -261,13 +339,90 @@ export class ProgresoService {
     }
 
     const stats = resultado[0];
+    const totalEjercicios = parseInt(stats.total_ejercicios) || 0;
+    const ejerciciosCorrectos = parseInt(stats.ejercicios_correctos) || 0;
+    const promedioProgreso = totalEjercicios > 0 
+      ? Math.round((ejerciciosCorrectos / totalEjercicios) * 100)
+      : 0;
+
     return {
       materiaId: stats.materia_id,
       materiaNombre: stats.materia_nombre,
-      totalTemas: parseInt(stats.total_temas) || 0,
-      temasCompletados: parseInt(stats.temas_completados) || 0,
-      temasEnProgreso: parseInt(stats.temas_en_progreso) || 0,
-      promedioProgreso: parseFloat(stats.promedio_progreso) || 0
+      totalEjercicios: totalEjercicios,
+      ejerciciosCompletados: ejerciciosCorrectos,
+      promedioProgreso: promedioProgreso
+    };
+  }
+
+  /**
+   * Calcular progreso de todas las materias del estudiante
+   * Retorna progreso por materia y progreso general
+   */
+  async calcularProgresoGeneral(usuarioId: number): Promise<any> {
+    // Obtener todas las materias en las que está matriculado el estudiante
+    const queryMaterias = `
+      SELECT DISTINCT m.id as materia_id, m.nombre as materia_nombre
+      FROM matriculas mat
+      INNER JOIN materias m ON m.id = mat.materia_id
+      WHERE mat.usuario_id = $1
+    `;
+
+    const materias = await AppDataSource.query(queryMaterias, [usuarioId]);
+
+    // Calcular progreso para cada materia
+    const progresosPorMateria = [];
+    let totalEjerciciosGeneral = 0;
+    let totalCompletadosGeneral = 0;
+
+    for (const materia of materias) {
+      // Calcular progreso basado en ejercicios completados
+      const queryProgreso = `
+        SELECT 
+          COUNT(DISTINCT e.id) as total_ejercicios,
+          COUNT(DISTINCT CASE 
+            WHEN ie.resultado = 'correcto' 
+            THEN ie.ejercicio_id 
+          END) as ejercicios_completados
+        FROM materias m
+        INNER JOIN temas t ON t.materia_id = m.id
+        LEFT JOIN subtemas s ON s.tema_id = t.id
+        LEFT JOIN ejercicios e ON e.subtema_id = s.id
+        LEFT JOIN intentos_ejercicios ie ON ie.ejercicio_id = e.id 
+          AND ie.usuario_id = $1
+        WHERE m.id = $2
+      `;
+
+      const resultado = await AppDataSource.query(queryProgreso, [usuarioId, materia.materia_id]);
+      
+      const totalEjercicios = parseInt(resultado[0].total_ejercicios) || 0;
+      const ejerciciosCompletados = parseInt(resultado[0].ejercicios_completados) || 0;
+      
+      const porcentaje = totalEjercicios > 0 
+        ? Math.round((ejerciciosCompletados / totalEjercicios) * 100)
+        : 0;
+
+      progresosPorMateria.push({
+        materiaId: materia.materia_id,
+        materiaNombre: materia.materia_nombre,
+        totalEjercicios,
+        ejerciciosCompletados,
+        porcentajeCompletado: porcentaje
+      });
+
+      totalEjerciciosGeneral += totalEjercicios;
+      totalCompletadosGeneral += ejerciciosCompletados;
+    }
+
+    // Calcular progreso general
+    const progresoGeneral = totalEjerciciosGeneral > 0
+      ? Math.round((totalCompletadosGeneral / totalEjerciciosGeneral) * 100)
+      : 0;
+
+    return {
+      progresoGeneral,
+      totalEjercicios: totalEjerciciosGeneral,
+      ejerciciosCompletados: totalCompletadosGeneral,
+      materias: progresosPorMateria
     };
   }
 }

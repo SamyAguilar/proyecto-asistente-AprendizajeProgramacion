@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // CORREGIDO - Paginas reales con AyudaScreen
   final List<Widget> _pages = [
     const _DashboardPage(),
-    const MateriasListScreen(),
+    const MisMateriasScreen(), // CAMBIADO: Ahora muestra solo materias matriculadas
     const ProgresoScreen(),
     const AyudaScreen(),  // Pantalla real de LUZIA
     const ProfileScreen(),
@@ -204,11 +204,13 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Descubre nuevos temas',
                   color: Colors.purple,
                   onTap: () {
-                    // Cambiar a tab de Materias
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    homeState?.setState(() {
-                      homeState._currentIndex = 1;
-                    });
+                    // Navegar a pantalla de TODAS las materias disponibles
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MateriasListScreen(),
+                      ),
+                    );
                   },
                   isDark: isDark,
                 ),
@@ -221,10 +223,10 @@ class _DashboardPage extends StatelessWidget {
                   subtitle: 'Asistente con IA',
                   color: AppTheme.accentColor,
                   onTap: () {
-                    // Cambiar a tab de LUZIA
+                    // Cambiar a tab de LUZIA (índice 3)
                     final homeState = context.findAncestorStateOfType<_HomeScreenState>();
                     homeState?.setState(() {
-                      homeState._currentIndex = 2;
+                      homeState._currentIndex = 3;
                     });
                   },
                   isDark: isDark,

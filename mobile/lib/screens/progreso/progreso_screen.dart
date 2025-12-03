@@ -26,7 +26,8 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
     final progresoProvider = context.read<ProgresoProvider>();
 
     await materiaProvider.obtenerMisMaterias();
-    await progresoProvider.obtenerMiProgreso();
+    // Usar el endpoint de progreso general que calcula todo automáticamente
+    await progresoProvider.obtenerProgresoGeneral();
   }
 
   @override
@@ -77,6 +78,9 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
                 final progreso = progresoProvider.getProgresoPorMateria(materia.id);
                 final estado = progresoProvider.getEstadoPorMateria(materia.id);
 
+                // Determinar color según el progreso
+                final colorProgreso = _getColorProgreso(progreso);
+
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
@@ -93,6 +97,8 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
                         ProgresoBar(
                           progreso: progreso,
                           height: 10,
+                          color: colorProgreso,
+                          showLabel: false,
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -102,7 +108,8 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
                               '${progreso.toStringAsFixed(0)}% completado',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: colorProgreso,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
@@ -159,6 +166,23 @@ class _ProgresoScreenState extends State<ProgresoScreen> {
         return Colors.green;
       default:
         return Colors.grey;
+    }
+  }
+
+  /// Determina el color de la barra de progreso según el porcentaje
+  Color _getColorProgreso(double progreso) {
+    if (progreso >= 60) {
+      // Progreso avanzado: azul
+      return Colors.blue;
+    } else if (progreso >= 30) {
+      // Progreso medio: naranja
+      return Colors.orange;
+    } else if (progreso > 0) {
+      // Progreso bajo: amarillo
+      return Colors.amber;
+    } else {
+      // Sin progreso: gris
+      return Colors.grey;
     }
   }
 }

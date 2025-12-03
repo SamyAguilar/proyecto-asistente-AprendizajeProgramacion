@@ -56,6 +56,49 @@ class ProgresoProvider with ChangeNotifier {
     return _progresosPorTema[temaId]?.estado ?? 'no_iniciado';
   }
 
+  /// NUEVO: Calcula progreso de subtema basado en ejercicios completados
+  /// [subtemaId]: Identificador del subtema
+  Future<double> calcularProgresoSubtema(int subtemaId) async {
+    try {
+      // Obtener todos los intentos del subtema
+      final intentos = await obtenerIntentosSubtema(subtemaId);
+
+      if (intentos.isEmpty) {
+        return 0.0;
+      }
+
+      // Agrupar por ejercicio y obtener solo el último intento de cada uno
+      final Map<int, dynamic> ultimosIntentos = {};
+      for (var intento in intentos) {
+        final ejercicioId = intento['ejercicio_id'] ?? intento['ejercicioId'];
+        if (ejercicioId != null) {
+          // Si no existe o es más reciente, actualizar
+          if (!ultimosIntentos.containsKey(ejercicioId) ||
+              (intento['id'] ?? 0) > (ultimosIntentos[ejercicioId]['id'] ?? 0)) {
+            ultimosIntentos[ejercicioId] = intento;
+          }
+        }
+      }
+
+      // Contar ejercicios correctos
+      int correctos = 0;
+      for (var intento in ultimosIntentos.values) {
+        if (intento['resultado'] == 'correcto') {
+          correctos++;
+        }
+      }
+
+      // Calcular porcentaje
+      final progreso = (correctos / ultimosIntentos.length) * 100;
+      debugPrint('Progreso subtema $subtemaId: $correctos/${ultimosIntentos.length} = $progreso%');
+
+      return progreso;
+    } catch (e) {
+      debugPrint('Error al calcular progreso de subtema: $e');
+      return 0.0;
+    }
+  }
+
   /// Actualiza el progreso de un tema
   /// [temaId]: Identificador del tema
   /// [progreso]: Porcentaje de progreso (0.0 - 100.0)
@@ -170,7 +213,14 @@ class ProgresoProvider with ChangeNotifier {
 
   /// Obtiene el progreso de una materia especifica
   /// [materiaId]: Identificador de la materia
-  Future<void> obtenerProgresoMateria(int materiaId) async {
+  /// [forceRefresh]: Fuerza la recarga aunque ya exista el progreso
+  Future<void> obtenerProgresoMateria(int materiaId, {bool forceRefresh = false}) async {
+    // Si ya existe el progreso y no se fuerza la recarga, no hacer nada
+    if (!forceRefresh && _porcentajesPorMateria.containsKey(materiaId)) {
+      debugPrint('Progreso de materia $materiaId ya cargado: ${_porcentajesPorMateria[materiaId]}%');
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -187,7 +237,7 @@ class ProgresoProvider with ChangeNotifier {
         _porcentajesPorMateria[materiaId] =
             (progresoData['promedioProgreso'] as num?)?.toDouble() ?? 0.0;
 
-        debugPrint('Progreso materia $materiaId: ${getProgresoPorMateria(materiaId)}%');
+        debugPrint('Progreso materia $materiaId actualizado: ${getProgresoPorMateria(materiaId)}%');
       }
     } catch (e) {
       _error = e.toString();
@@ -200,9 +250,16 @@ class ProgresoProvider with ChangeNotifier {
 
   /// NUEVO METODO: Obtiene el progreso de un tema especifico
   /// [temaId]: Identificador del tema
+  /// [forceRefresh]: Fuerza la recarga aunque ya exista el progreso
   /// Este metodo es CLAVE para refrescar el progreso despues de resolver ejercicios
-  Future<void> obtenerProgresoTema(int temaId) async {
-    debugPrint('=== OBTENIENDO PROGRESO TEMA $temaId ===');
+  Future<void> obtenerProgresoTema(int temaId, {bool forceRefresh = false}) async {
+    // Si ya existe el progreso y no se fuerza la recarga, no hacer nada
+    if (!forceRefresh && _porcentajesPorTema.containsKey(temaId)) {
+      debugPrint('⏭️  Progreso de tema $temaId ya cargado: ${_porcentajesPorTema[temaId]}%');
+      return;
+    }
+
+    debugPrint('🔄 === OBTENIENDO PROGRESO TEMA $temaId (forceRefresh: $forceRefresh) ===');
 
     _isLoading = true;
     _error = null;
@@ -211,7 +268,7 @@ class ProgresoProvider with ChangeNotifier {
     try {
       final response = await _httpService.get('/progreso/tema/$temaId');
 
-      debugPrint('Response progreso tema $temaId: ${response.data}');
+      debugPrint('📥 Response progreso tema $temaId: ${response.data}');
 
       if (response.data != null && response.data['success'] == true) {
         final progresoData = response.data['data'];
@@ -220,11 +277,13 @@ class ProgresoProvider with ChangeNotifier {
         _progresosPorTema[temaId] = progresoModel;
         _porcentajesPorTema[temaId] = progresoModel.porcentajeCompletado;
 
-        debugPrint('Progreso tema $temaId actualizado: ${getProgresoPorTema(temaId)}%');
+        debugPrint('✅ Progreso tema $temaId actualizado: ${getProgresoPorTema(temaId)}%');
+      } else {
+        debugPrint('⚠️  Response sin success para tema $temaId');
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error al obtener progreso de tema: $e');
+      debugPrint('❌ Error al obtener progreso de tema: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -238,25 +297,27 @@ class ProgresoProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _httpService.get('/usuarios/progreso');
+      final response = await _httpService.get('/progreso/general');
 
       debugPrint('Response progreso general: ${response.data}');
 
-      if (response.data != null && response.data is Map) {
-        final data = response.data as Map<String, dynamic>;
+      if (response.data != null && response.data['success'] == true) {
+        final data = response.data['data'];
 
-        if (data.containsKey('materias') && data['materias'] is List) {
+        // Actualizar progreso general
+        if (data['materias'] is List) {
           for (var materia in data['materias']) {
-            if (materia is Map) {
-              final materiaId = materia['materiaId'] as int?;
-              final progreso = materia['progreso'] ?? materia['porcentajeCompletado'];
+            final materiaId = materia['materiaId'] as int?;
+            final porcentaje = materia['porcentajeCompletado'];
 
-              if (materiaId != null && progreso != null) {
-                _porcentajesPorMateria[materiaId] = (progreso as num).toDouble();
-              }
+            if (materiaId != null && porcentaje != null) {
+              _porcentajesPorMateria[materiaId] = (porcentaje as num).toDouble();
             }
           }
         }
+
+        debugPrint('Progreso general cargado: ${data['progresoGeneral']}%');
+        debugPrint('Materias actualizadas: ${_porcentajesPorMateria.length}');
 
         _isLoading = false;
         notifyListeners();
