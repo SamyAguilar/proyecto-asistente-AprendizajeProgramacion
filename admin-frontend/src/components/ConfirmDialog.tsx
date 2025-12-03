@@ -17,7 +17,7 @@ import {
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
-  mensaje: string;
+  message: string;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;

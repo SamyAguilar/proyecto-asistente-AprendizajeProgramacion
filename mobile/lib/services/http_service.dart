@@ -114,7 +114,7 @@ class HttpService {
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return HttpException(
-          mensaje: AppConstants.errorConexion,
+          message: AppConstants.errorConexion,
           statusCode: 0,
         );
 
@@ -124,32 +124,32 @@ class HttpService {
 
         if (statusCode == 401) {
           return HttpException(
-            mensaje: AppConstants.errorAutenticacion,
+            message: AppConstants.errorAutenticacion,
             statusCode: 401,
           );
         }
 
         if (statusCode >= 500) {
           return HttpException(
-            mensaje: AppConstants.errorServidor,
+            message: AppConstants.errorServidor,
             statusCode: statusCode,
           );
         }
 
         return HttpException(
-          mensaje: message ?? AppConstants.errorGenerico,
+          message: message ?? AppConstants.errorGenerico,
           statusCode: statusCode,
         );
 
       case DioExceptionType.cancel:
         return HttpException(
-          mensaje: 'Peticion cancelada',
+          message: 'Peticion cancelada',
           statusCode: 0,
         );
 
       default:
         return HttpException(
-          mensaje: error.message ?? AppConstants.errorGenerico,
+          message: error.message ?? AppConstants.errorGenerico,
           statusCode: 0,
         );
     }
@@ -254,14 +254,14 @@ class _AuthInterceptor extends Interceptor {
 // ============================================
 
 class HttpException implements Exception {
-  final String mensaje;  // ← CAMBIADO: message → mensaje
+  final String message;
   final int statusCode;
 
   HttpException({
-    required this.mensaje,  // ← CAMBIADO
+    required this.message,
     required this.statusCode,
   });
 
   @override
-  String toString() => mensaje;  // ← CAMBIADO
+  String toString() => message;
 }

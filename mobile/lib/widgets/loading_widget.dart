@@ -8,13 +8,13 @@ import '../config/theme.dart';
 // ============================================
 
 class LoadingWidget extends StatelessWidget {
-  final String? mensaje;  // ← CAMBIADO: message → mensaje
+  final String? message;
   final Color? color;
   final double size;
 
   const LoadingWidget({
     super.key,
-    this.mensaje,  // ← CAMBIADO
+    this.message,
     this.color,
     this.size = 40,
   });
@@ -35,10 +35,10 @@ class LoadingWidget extends StatelessWidget {
               ),
             ),
           ),
-          if (mensaje != null) ...[  // ← CAMBIADO
+          if (message != null) ...[
             const SizedBox(height: 16),
             Text(
-              mensaje!,  // ← CAMBIADO
+              message!,
               style: TextStyle(
                 fontSize: 14,
                 color: AppTheme.textSecondaryColor,
@@ -57,17 +57,17 @@ class LoadingWidget extends StatelessWidget {
 // ============================================
 
 class LoadingScreen extends StatelessWidget {
-  final String? mensaje;  // ← CAMBIADO
+  final String? message;
 
   const LoadingScreen({
     super.key,
-    this.mensaje,  // ← CAMBIADO
+    this.message,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LoadingWidget(mensaje: mensaje),  // ← CAMBIADO
+      body: LoadingWidget(message: message),
     );
   }
 }
@@ -79,13 +79,13 @@ class LoadingScreen extends StatelessWidget {
 class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final Widget child;
-  final String? mensaje;  // ← CAMBIADO
+  final String? message;
 
   const LoadingOverlay({
     super.key,
     required this.isLoading,
     required this.child,
-    this.mensaje,  // ← CAMBIADO
+    this.message,
   });
 
   @override
@@ -97,7 +97,7 @@ class LoadingOverlay extends StatelessWidget {
           Container(
             color: Colors.black.withOpacity(0.3),
             child: LoadingWidget(
-              mensaje: mensaje,  // ← CAMBIADO
+              message: message,
               color: Colors.white,
             ),
           ),

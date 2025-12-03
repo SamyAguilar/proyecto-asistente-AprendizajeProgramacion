@@ -10,7 +10,6 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
-  bool get isDark => _themeMode == ThemeMode.dark;  // ← AGREGAR ESTA LÍNEA
 
   // Inicializar con el tema guardado
   Future<void> init() async {
