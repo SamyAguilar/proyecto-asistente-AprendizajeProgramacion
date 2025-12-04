@@ -3,13 +3,13 @@ class AppConstants {
   // URLs DEL BACKEND
 
   // Para desarrollo local con emulador Android
-  static const String baseUrl = 'http://192.168.0.190:3000';
+  //static const String baseUrl = 'http://192.168.0.190:3000';
 
   // Para desarrollo local con iOS simulator, usa:
   // static const String baseUrl = 'http://localhost:3000';
 
   // Para produccion (Render), cambia a:
-  // static const String baseUrl = 'https://tu-app.onrender.com';
+  static const String baseUrl = 'https://proyecto-asistente-ycue.onrender.com';
 
   static const String apiVersion = '/api/v1';
 
