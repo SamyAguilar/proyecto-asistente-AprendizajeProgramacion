@@ -1,18 +1,6 @@
 import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit';
 import { Request, Response } from 'express';
 
-// Extender la interfaz Request para incluir rateLimit
-declare module 'express-serve-static-core' {
-  interface Request {
-    rateLimit?: {
-      limit: number;
-      current: number;
-      remaining: number;
-      resetTime?: Date;
-    };
-  }
-}
-
 /**
  * Rate limiter general para toda la API
  * Límite: 100 requests por 15 minutos por IP
@@ -28,7 +16,7 @@ export const generalRateLimiter = rateLimit({
   standardHeaders: true, // Incluir headers `RateLimit-*`
   legacyHeaders: false, // Deshabilitar headers `X-RateLimit-*`
   handler: (req: Request, res: Response) => {
-    const resetTime = req.rateLimit?.resetTime;
+    const resetTime = (req as any).rateLimit?.resetTime;
     const retryAfter = resetTime ? Math.ceil(resetTime.getTime() / 1000) : 900; // 15 minutos por defecto
     
     res.status(429).json({
@@ -57,7 +45,7 @@ export const authRateLimiter = rateLimit({
   skipSuccessfulRequests: true, // No contar requests exitosos
   handler: (req: Request, res: Response) => {
     console.warn(`🚨 Rate limit excedido para IP: ${req.ip} en ruta de autenticación`);
-    const resetTime = req.rateLimit?.resetTime;
+    const resetTime = (req as any).rateLimit?.resetTime;
     const retryAfter = resetTime ? Math.ceil(resetTime.getTime() / 1000) : 900;
     
     res.status(429).json({
@@ -84,7 +72,7 @@ export const registroRateLimiter = rateLimit({
   },
   handler: (req: Request, res: Response) => {
     console.warn(`🚨 Rate limit excedido para IP: ${req.ip} en registro`);
-    const resetTime = req.rateLimit?.resetTime;
+    const resetTime = (req as any).rateLimit?.resetTime;
     const retryAfter = resetTime ? Math.ceil(resetTime.getTime() / 1000) : 3600;
     
     res.status(429).json({
@@ -113,7 +101,7 @@ export const ejerciciosRateLimiter = rateLimit({
     retryAfter: '10 minutos'
   },
   handler: (req: Request, res: Response) => {
-    const resetTime = req.rateLimit?.resetTime;
+    const resetTime = (req as any).rateLimit?.resetTime;
     const retryAfter = resetTime ? Math.ceil(resetTime.getTime() / 1000) : 600;
     
     res.status(429).json({
