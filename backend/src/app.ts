@@ -36,6 +36,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
+// CONFIGURACIÓN CRÍTICA PARA PRODUCCIÓN
+// ============================================
+// ⭐ SOLUCIÓN AL ERROR DE X-Forwarded-For
+// Habilitar trust proxy para que express-rate-limit funcione correctamente
+// detrás del proxy de Render
+app.set('trust proxy', 1);
+
+// ============================================
 // MIDDLEWARES GLOBALES
 // ============================================
 
