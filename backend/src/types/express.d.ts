@@ -1,4 +1,4 @@
-import { RolUsuario } from '../models';
+import { RolUsuario } from '../models/Usuario';
 
 declare global {
   namespace Express {
@@ -12,5 +12,3 @@ declare global {
     }
   }
 }
-
-export {};
